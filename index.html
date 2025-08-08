@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<title>Alphabet Invaders — Ultimate Educational Arcade</title>
+<style>
+  :root{
+    --bg1:#05070a; --bg2:#0a0f1d; --neon:#00ffff; --accent:#7A3EFF;
+    --ui:#e8f1ff; --warn:#ffcc33; --danger:#ff5a5f; --good:#31d0aa;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:radial-gradient(1200px 800px at 50% -10%, var(--bg2), var(--bg1) 60%);}
+  body{color:var(--ui);font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+
+  /* App layout: canvas + sidebar */
+  #app{position:fixed;inset:0;display:grid;grid-template-columns: 1fr min(420px,36vw);gap:0}
+  #gameWrap{position:relative;overflow:hidden}
+  canvas{display:block;width:100%;height:100%}
+
+  /* Sidebar (desktop column) */
+  #sidebar{
+    position:relative;
+    background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.03));
+    border-left:1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(6px);
+    padding:14px 14px 80px;
+    overflow:auto
+  }
+  .panel{border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:12px;margin-bottom:12px;background: rgba(0,0,0,0.25);box-shadow:0 10px 30px rgba(0,0,0,0.25)}
+  h3{margin:0 0 8px;font-size:15px;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+  .stats{font-variant-numeric:tabular-nums;font-weight:800;font-size:18px}
+  .badge{display:inline-block;padding:3px 8px;margin-left:6px;border-radius:999px;background:rgba(255,255,255,.08);font-size:12px}
+
+  /* Progress grid */
+  .progress-bar{height:10px;background:#111;border-radius:999px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#00aaff,#00ffff);width:0%}
+  .letter-grid{display:grid;grid-template-columns: repeat(8, 1fr);gap:8px;margin-top:10px}
+  .cell{height:34px;display:grid;place-items:center;border-radius:50%;border:2px solid #444;font-weight:800}
+  .cell.learned{background:linear-gradient(135deg,#00aaff,#00ffaa);border-color:#00ffaa;color:#012}
+  .cell.pending{background:rgba(255,255,255,.06);color:#9bb}
+
+  /* Power tag */
+  .tag{display:inline-block;padding:4px 10px;border-radius:999px;font-weight:800}
+  .tag.none{background:rgba(255,255,255,.08)}
+  .tag.rapid{background:rgba(49,208,170,.18);border:1px solid rgba(49,208,170,.45);color:#9cf1dc}
+  .tag.spread{background:rgba(122,62,255,.18);border:1px solid rgba(122,62,255,.45);color:#c9b7ff}
+  .tag.shield{background:rgba(255,204,51,.18);border:1px solid rgba(255,204,51,.45);color:#ffeaa6}
+
+  /* Mobile toolbar (still overlays but small) */
+  .mobile{position:absolute;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;pointer-events:none}
+  .mobile button{pointer-events:auto;padding:14px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:var(--ui);font-weight:800}
+  .mobile .fire{background:rgba(255,255,255,.14)}
+
+  /* Top HUD over canvas */
+  .hud{position:absolute;left:10px;top:10px;background:rgba(12,16,24,.65);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 10px;backdrop-filter: blur(6px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+
+  /* Overlays */
+  .overlay{position:fixed;inset:0;display:grid;place-items:center;background:rgba(3,5,9,.65);backdrop-filter: blur(8px);z-index:10}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.15);
+    border-radius:16px;padding:18px;max-width:760px;width:min(92vw,760px);text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+  .card h1{margin:4px 0 8px;font-size:clamp(22px,3.6vw,34px)}
+  .btnbar{display:flex;gap:10px;justify-content:center;margin-top:12px}
+  button{appearance:none;border:1px solid rgba(255,255,255,.24);border-radius:12px;padding:10px 14px;background:#111827;color:var(--ui);font-weight:800;cursor:pointer}
+  button.primary{background:var(--accent);border-color:rgba(122,62,255,.65)}
+
+  /* Boss warning */
+  #bossOverlay .card{color:#ff6b6b;text-shadow:0 0 16px #ff6b6b;font-weight:900}
+
+  /* Learning Popup */
+  .learning-popup{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,30,.95);
+    border:3px solid var(--neon);box-shadow:0 0 30px var(--neon), 0 0 60px rgba(0,255,255,.3);
+    color:#fff;padding:28px;border-radius:22px;text-align:center;z-index:40;display:none;max-width:640px}
+  .learning-letter{font-size:120px;font-weight:900;color:var(--neon);text-shadow:0 0 20px rgba(0,255,255,.8);margin:8px 0}
+  .learning-sound{font-size:34px;color:#ffff00;font-weight:800}
+  .learning-word{font-size:42px;color:#00ff88;margin:6px 0;text-transform:capitalize}
+  .learning-image{font-size:72px;filter:drop-shadow(0 0 10px rgba(255,255,255,.5))}
+  .repeat-button{margin-top:12px;background:linear-gradient(#00aaff,#0066cc);color:#fff;border:none;padding:10px 20px;font-size:18px;border-radius:999px;font-weight:900}
+
+  /* MOBILE/NARROW: sidebar becomes its own row (canvas resizes) */
+  @media (max-width: 1100px){
+    #app{
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr auto; /* canvas row, then sidebar row */
+    }
+    #sidebar{
+      position: relative;
+      transform: none;
+      max-height: none;
+      padding-bottom: 12px;
+      border-left: none;
+      border-top: 1px solid rgba(255,255,255,.12);
+      overflow: hidden; /* we will control height via classes */
+    }
+    #sidebar.collapsed{ height: 42px; }
+    #sidebar.expanded{ height: min(55vh, 420px); overflow:auto; transition: height .25s ease; }
+
+    /* Grab bar lives inside the sidebar row now */
+    #grab{
+      position: relative;
+      top: 0; left: 0; right: 0; height: 42px;
+      display: grid; place-items: center; cursor: pointer;
+      color:#9ff; background:rgba(0,0,0,.35); border-top:1px solid rgba(255,255,255,.12);
+      margin:-14px -14px 8px -14px; /* stretch to panel edges visually */
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="gameWrap">
+    <canvas id="game"></canvas>
+    <div class="hud"><strong>Score:</strong> <span id="score">0</span> &nbsp;•&nbsp; <strong>Lives:</strong> <span id="lives">♥♥♥</span> &nbsp;•&nbsp; <strong>Wave:</strong> <span id="wave">1</span></div>
+    <div class="mobile" id="mobile">
+      <button id="leftBtn">←</button>
+      <button class="fire" id="fireBtn">FIRE</button>
+      <button id="rightBtn">→</button>
+    </div>
+  </div>
+
+  <aside id="sidebar">
+    <div id="grab">▲ Game Info</div>
+    <div class="panel">
+      <h3>Mode</h3>
+      <div class="stats">Current: <span id="modeStatus">LEARNING</span>
+        <button id="modeToggle" class="badge">Toggle (M)</button>
+      </div>
+      <div style="margin-top:6px">
+        <label><input type="checkbox" id="muteSfx"> Mute SFX</label>
+        <span class="badge">M</span>
+        &nbsp;&nbsp;
+        <label><input type="checkbox" id="muteVoice"> Mute Voice</label>
+        <span class="badge">V</span>
+        &nbsp;&nbsp;
+        <label><input type="checkbox" id="reducedMotion"> Reduced Motion</label>
+        <span class="badge">R</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Power-Up</h3>
+      <div><span id="powerTag" class="tag none">None</span> <span class="badge" id="powerTime">00:00</span></div>
+    </div>
+
+    <div class="panel">
+      <h3>Progress</h3>
+      Letters Learned: <strong><span id="progressCount">0</span>/26</strong>
+      <div class="progress-bar" style="margin:6px 0 10px"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="letter-grid" id="letterGrid"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Scoring</h3>
+      <table>
+        <tr><th>Type</th><th>Color</th><th>Points</th></tr>
+        <tr><td>Vowel (A,E,I,O,U)</td><td style="color:#2ea3ff">Blue</td><td>+30</td></tr>
+        <tr><td>Consonant</td><td style="color:#ff4d4d">Red</td><td>+20</td></tr>
+        <tr><td>Rare (Q,X,Z,J)</td><td style="color:#ffcc33">Gold</td><td>+50</td></tr>
+        <tr><td>Boss (Q/X/Z)</td><td style="color:#c9b7ff">Purple</td><td>+500</td></tr>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h3>Controls</h3>
+      ←/→ Move, ↑ Fire, ESC Pause, M Toggle Mode, F FPS
+    </div>
+  </aside>
+</div>
+
+<!-- Overlays -->
+<div class="overlay" id="startOverlay">
+  <div class="card">
+    <h1>Alphabet Invaders</h1>
+    <p>Arcade shooter that sneaks in A–Z learning.</p>
+    <div class="btnbar">
+      <button class="primary" id="startBtn">Start Game</button>
+      <button id="howBtn">How to Play</button>
+    </div>
+    <p style="opacity:.75;margin-top:6px">Tip: Enable Reduced Motion if sensitive to shake/particles.</p>
+  </div>
+</div>
+<div class="overlay" id="howOverlay" style="display:none">
+  <div class="card">
+    <h1>How it works</h1>
+    <div style="text-align:left">
+      • Vowels are <span style="color:#2ea3ff">blue</span> (with underline); consonants <span style="color:#ff4d4d">red</span>; rare <span style="color:#ffcc33">gold</span>.<br/>
+      • Waves add +2 letters (cap 26) and +20% speed each time; boss on 5/10/15…<br/>
+      • Power-ups (Rapid/Spread/Shield) drop at 10% and last 5s.<br/>
+      • Rare letters sometimes shoot. Boss fires 3-shot spreads.
+    </div>
+    <div class="btnbar"><button class="primary" id="howBack">Back</button></div>
+  </div>
+</div>
+<div class="overlay" id="bossOverlay" style="display:none">
+  <div class="card">
+    <h1>Boss Incoming: <span id="bossLabel">Q</span></h1>
+    <p>Big purple letter • 10 HP • spread shots • screen shake on defeat</p>
+  </div>
+</div>
+<div class="overlay" id="gameOver" style="display:none">
+  <div class="card">
+    <h1>Game Over</h1>
+    <h2>Score: <span id="finalScore">0</span></h2>
+    <p>Max Wave: <span id="finalWave">1</span></p>
+    <div class="btnbar">
+      <button class="primary" id="restartBtn">Restart</button>
+      <button id="quitBtn">Quit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Learning popup -->
+<div class="learning-popup" id="learningPopup">
+  <div style="font-size:26px;color:#00ccff;margin-bottom:6px">Awesome!</div>
+  <div class="learning-letter" id="popupLetter">B</div>
+  <div class="learning-sound" id="popupSound">/b/ like in</div>
+  <div class="learning-word" id="popupWord">ball</div>
+  <div class="learning-image" id="popupImage">🎱</div>
+  <button class="repeat-button" id="repeatButton">Hear it again!</button>
+</div>
+
+<script>
+/*** =================== CONFIG =================== ***/
+const CONFIG = Object.freeze({
+  difficulty: {
+    lettersWave1: 8, lettersPerWave: 2, maxLettersPerWave: 26,
+    speedScalePerWave: 1.2,
+    spawn: { baseIntervalMs: 900, intervalDecayPerWave: 0.9, minIntervalMs: 250, minHorizontalGapPx: 40 }
+  },
+  player: {
+    moveSpeedPxPerSec: 320, bulletSpeedPxPerSec: 700, maxBullets: 6,
+    lives: 3, cooldownMs: 280, cooldownRapidMs: 120, widthPx: 64, heightPx: 32
+  },
+  enemies: {
+    baseVerticalSpeed: 60, baseHorizontalDrift: 40, driftRetargetMs: [900,1700],
+    rareLetters: ["Q","X","Z","J"], vowels: ["A","E","I","O","U"],
+    rareShoot: { chancePer2s: 0.10, bulletSpeed: 260, cooldownMs: 2000 }
+  },
+  boss: {
+    cycle:["Q","X","Z"], sizePx:200, color:"#7A3EFF", hp:10,
+    spreadAnglesDeg:[-15,0,15], fireEveryMs:2000, bulletSpeed:320,
+    sine:{ amplitudePx:120, periodMs:2400, descentPxPerSec:20 },
+    warningMs:2000, killShake:{ amplitudePx:8, durationMs:300 }
+  },
+  scoring:{ vowel:30, consonant:20, rare:50, boss:500, popupMs:300 },
+  powerUps:{
+    dropChance:.10, durationMs:5000,
+    types:{ rapid:true, spread:{ enabled:true, anglesDeg:[-10,0,10], maxBullets:12 }, shield:{ enabled:true } }
+  },
+  ui:{ showFps:false, minLetterHeightPx:48, mobileButtons:true },
+  visuals:{ starfieldLayers:3, glow:true, particles:{ perKill:[18,34], lifeMs:[280,520] }, reducedMotionDefault:false },
+  audio:{
+    enabled:true, letterCallouts:true, separateMuteForSfx:true,
+    /* NEW speech controls */
+    speechGapMs: 400, speechRate: 0.95, speechPitch: 1.1, speechVolume: 0.9
+  },
+  accessibility:{ vowelUnderline:true, colorBlindFriendly:true, reducedMotion:false },
+  debug:{ seedRandom:null, godMode:false }
+});
+
+/*** =================== Canvas & Layout =================== ***/
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let dpr = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+function resize(){
+  const wrap = document.getElementById('gameWrap');
+  const rect = wrap.getBoundingClientRect();
+  const w = Math.floor(rect.width * dpr), h = Math.floor(rect.height * dpr);
+  if (canvas.width!==w || canvas.height!==h){ canvas.width=w; canvas.height=h; }
+}
+new ResizeObserver(resize).observe(document.getElementById('gameWrap'));
+
+/*** =================== Input =================== ***/
+const keys = new Set();
+window.addEventListener('keydown', e=>{
+  if (["ArrowLeft","ArrowRight","ArrowUp","Escape","KeyM","KeyF","Space"].includes(e.code)) e.preventDefault();
+  keys.add(e.code);
+  if (e.code==='Escape') togglePause();
+  if (e.code==='KeyM') toggleMode();
+  if (e.code==='KeyF') toggleFPS();
+});
+window.addEventListener('keyup', e=>keys.delete(e.code));
+
+const mobile = { left:false,right:false,fireTap:false };
+function bindHold(el,prop){
+  el.addEventListener('pointerdown', e=>{e.preventDefault();mobile[prop]=true;el.setPointerCapture(e.pointerId);});
+  el.addEventListener('pointerup',   e=>{mobile[prop]=false;el.releasePointerCapture(e.pointerId);});
+  el.addEventListener('lostpointercapture', ()=>mobile[prop]=false);
+}
+bindHold(document.getElementById('leftBtn'),'left');
+bindHold(document.getElementById('rightBtn'),'right');
+document.getElementById('fireBtn').addEventListener('pointerdown', e=>{e.preventDefault();mobile.fireTap=true;});
+if (!CONFIG.ui.mobileButtons) document.getElementById('mobile').style.display='none';
+
+/*** =================== Audio (WebAudio + Speech) =================== ***/
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx=null; function ensureAudio(){ if(!audioCtx) audioCtx = new AudioCtx(); }
+const sfx = {
+  mute:false,
+  tone(f=600,d=0.06,type='square',g=0.02){ if(sfx.mute||!CONFIG.audio.enabled) return;
+    ensureAudio(); const t=audioCtx.currentTime, o=audioCtx.createOscillator(), gn=audioCtx.createGain();
+    o.type=type; o.frequency.value=f; gn.gain.value=g; gn.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(gn).connect(audioCtx.destination); o.start(t); o.stop(t+d); },
+  pew(){this.tone(900,0.05,'square',0.03)}, hit(){this.tone(500,0.04,'triangle',0.02)},
+  boom(){this.tone(120,0.2,'sawtooth',0.05); this.tone(90,0.25,'square',0.03)}, power(){this.tone(700,0.07,'sine',0.04)}
+};
+const voice = { mute:false }; // raw flag only
+
+/* NEW: Speech queue with gap and no interruption */
+const Speech = (() => {
+  let q = [], speaking = false, last = 0;
+  const conf = {
+    gap: CONFIG.audio.speechGapMs,
+    rate: CONFIG.audio.speechRate,
+    pitch: CONFIG.audio.speechPitch,
+    volume: CONFIG.audio.speechVolume
+  };
+  function pump(){
+    if (speaking || q.length===0 || voice.mute || !CONFIG.audio.letterCallouts || !('speechSynthesis' in window)) return;
+    const wait = Math.max(0, conf.gap - (Date.now() - last));
+    speaking = true;
+    setTimeout(() => {
+      const text = q.shift();
+      const u = new SpeechSynthesisUtterance(text);
+      const vs = speechSynthesis.getVoices();
+      u.voice = vs.find(v=>/child|kids|female|google/i.test(v.name)) || vs[0] || null;
+      u.rate = conf.rate; u.pitch = conf.pitch; u.volume = conf.volume;
+      u.onend = u.onerror = () => { speaking=false; last=Date.now(); pump(); };
+      speechSynthesis.speak(u);
+    }, wait);
+  }
+  return {
+    speak(text){ q.push(text); pump(); },
+    clear(){ if ('speechSynthesis' in window) speechSynthesis.cancel(); q=[]; speaking=false; },
+    setGap(ms){ conf.gap = ms; }
+  };
+})();
+
+/*** =================== DOM refs =================== ***/
+const elScore = document.getElementById('score'), elLives=document.getElementById('lives'), elWave=document.getElementById('wave');
+const elStart=document.getElementById('startOverlay'), elHow=document.getElementById('howOverlay');
+const elBoss=document.getElementById('bossOverlay'), elBossLabel=document.getElementById('bossLabel');
+const elGO=document.getElementById('gameOver'), elFinalScore=document.getElementById('finalScore'), elFinalWave=document.getElementById('finalWave');
+const elMode=document.getElementById('modeStatus'), btnMode=document.getElementById('modeToggle');
+const elPowerTag=document.getElementById('powerTag'), elPowerTime=document.getElementById('powerTime');
+const cbSfx=document.getElementById('muteSfx'), cbVoice=document.getElementById('muteVoice'), cbRM=document.getElementById('reducedMotion');
+cbSfx.onchange=()=>sfx.mute=cbSfx.checked; cbVoice.onchange=()=>voice.mute=cbVoice.checked;
+let reducedMotion = CONFIG.visuals.reducedMotionDefault || CONFIG.accessibility.reducedMotion; cbRM.checked=reducedMotion; cbRM.onchange=()=>reducedMotion=cbRM.checked;
+
+document.getElementById('startBtn').onclick=()=>{ elStart.style.display='none'; startGame(); };
+document.getElementById('howBtn').onclick=()=>{ elStart.style.display='none'; elHow.style.display='grid'; };
+document.getElementById('howBack').onclick=()=>{ elHow.style.display='none'; elStart.style.display='grid'; };
+document.getElementById('restartBtn').onclick=()=>{ elGO.style.display='none'; startGame(); };
+document.getElementById('quitBtn').onclick=()=>{ elGO.style.display='none'; elStart.style.display='grid'; };
+
+/* NEW: real row sidebar toggle on mobile */
+const sidebar = document.getElementById('sidebar');
+const grab = document.getElementById('grab');
+function isNarrow(){ return window.matchMedia('(max-width:1100px)').matches; }
+function setSidebarOpen(open){
+  if (!isNarrow()) return;         // desktop: ignore; sidebar is a column
+  sidebar.classList.toggle('expanded', open);
+  sidebar.classList.toggle('collapsed', !open);
+  // canvas will resize automatically because grid row height changes
+}
+grab.onclick = () => setSidebarOpen(!sidebar.classList.contains('expanded'));
+function initSidebarState(){ setSidebarOpen(false); } // collapsed by default on mobile
+window.addEventListener('resize', ()=>{ if(!isNarrow()){ sidebar.classList.remove('expanded','collapsed'); } else if(!sidebar.classList.contains('expanded') && !sidebar.classList.contains('collapsed')) { setSidebarOpen(false); }});
+
+/*** =================== Learning data =================== ***/
+const letterData = {
+A:{ sound:'/æ/ or /eɪ/', word:'apple', image:'🍎' },
+B:{ sound:'/b/', word:'ball', image:'🎱' },
+C:{ sound:'/k/ or /s/', word:'cat', image:'🐱' },
+D:{ sound:'/d/', word:'dog', image:'🐶' },
+E:{ sound:'/e/ or /iː/', word:'egg', image:'🥚' },
+F:{ sound:'/f/', word:'fish', image:'🐟' },
+G:{ sound:'/g/ or /dʒ/', word:'goat', image:'🐐' },
+H:{ sound:'/h/', word:'hat', image:'🎩' },
+I:{ sound:'/ɪ/ or /aɪ/', word:'igloo', image:'☃️' },
+J:{ sound:'/dʒ/', word:'jam', image:'🫐' },
+K:{ sound:'/k/', word:'kite', image:'🪁' },
+L:{ sound:'/l/', word:'lion', image:'🦁' },
+M:{ sound:'/m/', word:'monkey', image:'🐒' },
+N:{ sound:'/n/', word:'nest', image:'🪺' },
+O:{ sound:'/ɒ/ or /oʊ/', word:'owl', image:'🦉' },
+P:{ sound:'/p/', word:'pig', image:'🐷' },
+Q:{ sound:'/kw/', word:'queen', image:'👑' },
+R:{ sound:'/r/', word:'rabbit', image:'🐰' },
+S:{ sound:'/s/', word:'sun', image:'☀️' },
+T:{ sound:'/t/', word:'tree', image:'🌳' },
+U:{ sound:'/ʌ/ or /juː/', word:'umbrella', image:'☂️' },
+V:{ sound:'/v/', word:'van', image:'🚐' },
+W:{ sound:'/w/', word:'whale', image:'🐋' },
+X:{ sound:'/ks/', word:'xylophone', image:'🎵' },
+Y:{ sound:'/j/', word:'yacht', image:'⛵' },
+Z:{ sound:'/z/', word:'zebra', image:'🦓' }
+};
+const learned = new Set();
+const elGrid = document.getElementById('letterGrid'), elProg=document.getElementById('progressCount'), elFill=document.getElementById('progressFill');
+function rebuildGrid(){
+  elGrid.innerHTML='';
+  for (let i=0;i<26;i++){ const ch=String.fromCharCode(65+i);
+    const d=document.createElement('div'); d.className='cell '+(learned.has(ch)?'learned':'pending'); d.textContent=ch; elGrid.appendChild(d);
+  }
+  elProg.textContent = learned.size;
+  elFill.style.width = ((learned.size/26)*100).toFixed(1)+'%';
+}
+
+/*** =================== Utilities =================== ***/
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const nowMs=()=>performance.now();
+function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function isVowel(ch){ return CONFIG.enemies.vowels.includes(ch); }
+function isRare(ch){ return CONFIG.enemies.rareLetters.includes(ch); }
+function colorForLetter(ch){ if (isRare(ch)) return '#ffcc33'; if (isVowel(ch)) return '#2ea3ff'; return '#ff4d4d'; }
+function fmtTime(ms){ if(ms<=0) return '00:00'; const s=Math.ceil(ms/1000); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function degToRad(d){ return d*Math.PI/180; }
+function randBetween(a,b){ return a + Math.random()*(b-a); }
+
+/*** =================== Game State =================== ***/
+const STATE = {
+  running:false, paused:false, learning:true,
+  score:0, lives:CONFIG.player.lives, wave:1,
+  letters:[], enemyBullets:[], playerBullets:[], particles:[], powerDrops:[], stars:[],
+  toSpawn:0, nextSpawn:0, bossActive:false, boss:null, bossIndex:0,
+  powerUp:null, player:null, shake:{t:0,amp:0,dur:0}, lastShot: -1e9
+};
+
+/*** =================== Entities =================== ***/
+class Player {
+  constructor(){
+    this.w=CONFIG.player.widthPx*dpr; this.h=CONFIG.player.heightPx*dpr;
+    this.x=(canvas.width-this.w)/2; this.y=canvas.height-this.h-22*dpr;
+    this.cooldown=CONFIG.player.cooldownMs; this.hasShield=false; this.lastShot=-1e9;
+  }
+  move(dt){
+    let dir=0; if(keys.has('ArrowLeft')||mobile.left) dir-=1; if(keys.has('ArrowRight')||mobile.right) dir+=1;
+    this.x += dir * CONFIG.player.moveSpeedPxPerSec * dpr * dt;
+    this.x = clamp(this.x,0,canvas.width-this.w);
+  }
+  tryShoot(t){
+    const cd = activePower('rapid') ? CONFIG.player.cooldownRapidMs : CONFIG.player.cooldownMs;
+    const can = (t-this.lastShot)>=cd;
+    const pressed = keys.has('ArrowUp') || mobile.fireTap;
+    if (pressed && can){
+      mobile.fireTap=false; this.lastShot=t; const cx=this.x+this.w/2, y=this.y-6*dpr;
+      const speed=CONFIG.player.bulletSpeedPxPerSec*dpr;
+      if (activePower('spread')){
+        for (const deg of CONFIG.powerUps.types.spread.anglesDeg) spawnPlayerBullet(cx,y,speed,degToRad(deg)-Math.PI/2);
+      } else spawnPlayerBullet(cx,y,speed,-Math.PI/2);
+      sfx.pew();
+    }
+  }
+  draw(){
+    ctx.save(); ctx.translate(this.x,this.y);
+    ctx.fillStyle='#9cc2ff'; if(CONFIG.visuals.glow){ctx.shadowColor='#9cc2ff';ctx.shadowBlur=12;}
+    ctx.beginPath(); ctx.moveTo(this.w/2,0); ctx.lineTo(this.w,this.h); ctx.lineTo(0,this.h); ctx.closePath(); ctx.fill();
+    if (activePower('shield') && this.hasShield){
+      ctx.strokeStyle='#ffe27a'; ctx.lineWidth=3*dpr; if(CONFIG.visuals.glow){ctx.shadowColor='#ffe27a';ctx.shadowBlur=16;}
+      ctx.beginPath(); ctx.ellipse(this.w/2,this.h/2,this.w*0.65,this.h*0.9,0,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+class Enemy {
+  constructor(ch){
+    this.ch=ch; this.w=Math.max(CONFIG.ui.minLetterHeightPx,Math.floor(canvas.height*0.06))*dpr; this.h=this.w;
+    this.x = Math.random()*(canvas.width-this.w); this.y = -this.h - Math.random()*120*dpr;
+    const s=speedScale(); this.vy=CONFIG.enemies.baseVerticalSpeed*s*dpr; this.vx=(Math.random()<.5?-1:1)*CONFIG.enemies.baseHorizontalDrift*s*dpr;
+    this.nextDrift=nowMs()+randBetween(...CONFIG.enemies.driftRetargetMs);
+    this.color=colorForLetter(ch); this.isRare=isRare(ch); this.isVowel=isVowel(ch); this.dead=false; this.lastShoot=nowMs();
+  }
+  center(){ return {x:this.x+this.w/2, y:this.y+this.h/2}; }
+  update(dt,t){
+    this.y+=this.vy*dt; this.x+=this.vx*dt;
+    if (this.x<0){this.x=0; this.vx=Math.abs(this.vx);} if (this.x+this.w>canvas.width){this.x=canvas.width-this.w; this.vx=-Math.abs(this.vx);}
+    if (t>=this.nextDrift){ this.vx = (Math.random()<.5?-1:1)*Math.abs(this.vx); this.nextDrift=t+randBetween(...CONFIG.enemies.driftRetargetMs); }
+    if (this.isRare && (t-this.lastShoot)>=CONFIG.enemies.rareShoot.cooldownMs){
+      this.lastShoot=t; if (Math.random()<CONFIG.enemies.rareShoot.chancePer2s){ const c=this.center(); shootAtPlayer(c.x,c.y,CONFIG.enemies.rareShoot.bulletSpeed*dpr); }
+    }
+  }
+  draw(){
+    ctx.save(); ctx.translate(this.x+this.w/2,this.y+this.h*0.82);
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.font=`bold ${this.h}px system-ui,-apple-system,Segoe UI,Roboto,Arial`;
+    if(CONFIG.visuals.glow){ctx.shadowColor=this.color;ctx.shadowBlur=18;}
+    ctx.fillStyle=this.color; ctx.fillText(this.ch,0,0);
+    if (CONFIG.accessibility.vowelUnderline && this.isVowel){ ctx.shadowBlur=0; ctx.strokeStyle='#d4e7ff'; ctx.lineWidth=3*dpr; ctx.beginPath(); ctx.moveTo(-this.w*0.35,4*dpr); ctx.lineTo(this.w*0.35,4*dpr); ctx.stroke(); }
+    ctx.restore();
+  }
+}
+class Boss {
+  constructor(letter){
+    this.letter=letter; this.size=CONFIG.boss.sizePx*dpr;
+    this.x=(canvas.width-this.size)/2; this.y=-this.size-40*dpr; this.t0=nowMs(); this.hp=CONFIG.boss.hp; this.dead=false; this.lastShoot=nowMs();
+  }
+  center(){ return {x:this.x+this.size/2,y:this.y+this.size/2}; }
+  update(dt,t){
+    const A=CONFIG.boss.sine.amplitudePx*dpr, P=CONFIG.boss.sine.periodMs;
+    this.x = canvas.width/2 + Math.sin((t-this.t0)/P*Math.PI*2)*A - this.size/2;
+    this.y += CONFIG.boss.sine.descentPxPerSec * dpr * dt; this.y = Math.min(this.y, canvas.height*0.18);
+    if (t-this.lastShoot>=CONFIG.boss.fireEveryMs){
+      this.lastShoot=t; const base=Math.PI/2;
+      for (const deg of CONFIG.boss.spreadAnglesDeg) spawnEnemyBullet(this.center().x, this.y+this.size, CONFIG.boss.bulletSpeed*dpr, base+degToRad(deg));
+      sfx.pew();
+    }
+  }
+  draw(){
+    ctx.save(); ctx.translate(this.x+this.size/2,this.y+this.size*0.82);
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.font=`bold ${this.size}px system-ui,-apple-system,Segoe UI,Roboto,Arial`;
+    if(CONFIG.visuals.glow){ctx.shadowColor=CONFIG.boss.color;ctx.shadowBlur=30;}
+    ctx.fillStyle=CONFIG.boss.color; ctx.fillText(this.letter,0,0); ctx.restore();
+    // HP bar
+    const w=this.size,h=10*dpr, bx=this.x, by=this.y-16*dpr; const pct=clamp(this.hp/CONFIG.boss.hp,0,1);
+    ctx.fillStyle='rgba(255,255,255,.18)'; ctx.fillRect(bx,by,w,h); ctx.fillStyle=pct>.5?'#7CFC00':(pct>.25?'#ffcc33':'#ff5a5f'); ctx.fillRect(bx,by,w*pct,h);
+    ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=2*dpr; ctx.strokeRect(bx,by,w,h);
+  }
+}
+class Bullet{ constructor(x,y,vx,vy,enemy=false){this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.enemy=enemy;this.r=enemy?4*dpr:3*dpr;this.dead=false;}
+  update(dt){this.x+=this.vx*dt; this.y+=this.vy*dt;}
+  draw(){ ctx.save(); ctx.translate(this.x,this.y); const c=this.enemy?'#ffd36b':'#b1d1ff'; if(CONFIG.visuals.glow){ctx.shadowColor=c;ctx.shadowBlur=10;}
+    ctx.fillStyle=c; ctx.beginPath(); ctx.arc(0,0,this.r,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+}
+class PowerDrop{ constructor(type,x,y){this.type=type;this.x=x;this.y=y;this.vy=90*dpr;this.r=14*dpr;this.dead=false;}
+  update(dt){ this.y += this.vy*dt; if(this.y-this.r>canvas.height) this.dead=true; }
+  draw(){ ctx.save(); ctx.translate(this.x,this.y); let color='#9cf1dc',label='R';
+    if(this.type==='spread'){color='#c9b7ff';label='S'} if(this.type==='shield'){color='#ffeaa6';label='H'}
+    if(CONFIG.visuals.glow){ctx.shadowColor=color;ctx.shadowBlur=14;}
+    ctx.fillStyle='rgba(255,255,255,.1)'; ctx.strokeStyle=color; ctx.lineWidth=3*dpr; ctx.beginPath(); ctx.arc(0,0,this.r,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=color; ctx.font=`bold ${14*dpr}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label,0,1*dpr); ctx.restore(); }
+}
+class Particle{ constructor(x,y,color){this.x=x;this.y=y; const a=Math.random()*Math.PI*2, s=80*dpr+Math.random()*180*dpr; this.vx=Math.cos(a)*s; this.vy=Math.sin(a)*s;
+  const L=randBetween(...CONFIG.visuals.particles.lifeMs); this.life=L; this.t0=nowMs(); this.dead=false; this.color=color; }
+  update(dt,t){ if(t-this.t0>=this.life) this.dead=true; this.x+=this.vx*dt; this.y+=this.vy*dt; }
+  draw(t){ const k=clamp((t-this.t0)/this.life,0,1); ctx.save(); ctx.globalAlpha=1-k; if(CONFIG.visuals.glow){ctx.shadowColor=this.color;ctx.shadowBlur=8;}
+    ctx.fillStyle=this.color; ctx.fillRect(this.x,this.y,3*dpr,3*dpr); ctx.restore(); }
+}
+class Star{ constructor(layer){this.layer=layer; this.reset(true);} reset(initial=false){this.x=Math.random()*canvas.width; this.y=initial?Math.random()*canvas.height:-2; this.speed=(20+this.layer*40)*dpr; this.size=(1+this.layer)*dpr; this.alpha=.3+this.layer*.25;}
+  update(dt){this.y+=this.speed*dt; if(this.y>canvas.height) this.reset();}
+  draw(){ ctx.save(); ctx.globalAlpha=this.alpha; ctx.fillStyle='#cfe3ff'; ctx.fillRect(this.x,this.y,this.size,this.size); ctx.restore(); }
+}
+
+/*** =================== Difficulty helpers =================== ***/
+function speedScale(){ return Math.pow(CONFIG.difficulty.speedScalePerWave, Math.max(0,STATE.wave-1)); }
+function spawnIntervalMs(){ const raw=CONFIG.difficulty.spawn.baseIntervalMs*Math.pow(CONFIG.difficulty.spawn.intervalDecayPerWave,Math.max(0,STATE.wave-1)); return Math.max(CONFIG.difficulty.spawn.minIntervalMs,Math.round(raw)); }
+function waveLetterCount(){ return Math.min(CONFIG.difficulty.maxLettersPerWave, CONFIG.difficulty.lettersWave1 + CONFIG.difficulty.lettersPerWave*(STATE.wave-1)); }
+function glow(color,blur){ if(!CONFIG.visuals.glow) return; ctx.shadowColor=color; ctx.shadowBlur=blur; }
+function noGlow(){ ctx.shadowBlur=0; }
+
+/*** =================== Spawners & Power-ups =================== ***/
+function spawnPlayerBullet(x,y,speed,angle){ const cap=activePower('spread')?CONFIG.powerUps.types.spread.maxBullets:CONFIG.player.maxBullets;
+  const on=STATE.playerBullets.filter(b=>!b.enemy).length; if(on>=cap) return; STATE.playerBullets.push(new Bullet(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,false)); }
+function spawnEnemyBullet(x,y,speed,angle){ STATE.enemyBullets.push(new Bullet(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,true)); }
+function shootAtPlayer(x,y,speed){ const px=STATE.player.x+STATE.player.w/2, py=STATE.player.y+STATE.player.h/2; const a=Math.atan2(py-y,px-x); spawnEnemyBullet(x,y,speed,a); }
+function maybeDropPowerUp(x,y){
+  if(Math.random()<CONFIG.powerUps.dropChance){
+    const types=['rapid','spread','shield'].filter(t=> t==='rapid'?CONFIG.powerUps.types.rapid : t==='spread'?CONFIG.powerUps.types.spread.enabled : CONFIG.powerUps.types.shield.enabled);
+    if(types.length) STATE.powerDrops.push(new PowerDrop(choice(types),x,y));
+  }
+}
+function activatePower(type){ STATE.powerUp={type,expires:nowMs()+CONFIG.powerUps.durationMs, shieldAvailable:type==='shield'}; if(type==='shield') STATE.player.hasShield=true; sfx.power(); }
+function activePower(type){ return STATE.powerUp && STATE.powerUp.type===type && (STATE.powerUp.expires-nowMs())>0; }
+function clearPower(){ if(STATE.powerUp && STATE.powerUp.type==='shield') STATE.player.hasShield=false; STATE.powerUp=null; }
+
+/*** =================== Flow =================== ***/
+function startGame(){
+  Object.assign(STATE,{ running:true,paused:false, score:0,lives:CONFIG.player.lives,wave:1, letters:[],enemyBullets:[],playerBullets:[],particles:[],powerDrops:[], stars:[], toSpawn:0,nextSpawn:nowMs(), bossActive:false,boss:null,bossIndex:0, powerUp:null, player:new Player(), shake:{t:0,amp:0,dur:0}});
+  learned.clear(); rebuildGrid(); setupStars(); resize(); initSidebarState(); requestAnimationFrame(loop);
+}
+function togglePause(){ if(!STATE.running) return; STATE.paused=!STATE.paused; }
+function toggleFPS(){ /* optional debug */ }
+function toggleMode(){ STATE.learning=!STATE.learning; elMode.textContent = STATE.learning?'LEARNING':'ARCADE'; }
+
+document.getElementById('modeToggle').onclick=toggleMode;
+
+function nextWave(){
+  STATE.wave++; STATE.letters.length=0; STATE.enemyBullets.length=0; STATE.playerBullets.length=0; STATE.powerDrops.length=0; clearPower();
+  if(isBossWave()){ STATE.bossActive=true; const letter=CONFIG.boss.cycle[STATE.bossIndex++%CONFIG.boss.cycle.length]; STATE.boss=new Boss(letter); bossWarning(letter); }
+  else { STATE.bossActive=false; STATE.boss=null; STATE.toSpawn = STATE.learning ? 1 : waveLetterCount(); STATE.nextSpawn = nowMs()+800; }
+}
+function isBossWave(){ return !STATE.learning && STATE.wave%5===0; }
+function bossWarning(letter){ document.getElementById('bossLabel').textContent=letter; document.getElementById('bossOverlay').style.display='grid'; setTimeout(()=>document.getElementById('bossOverlay').style.display='none', CONFIG.boss.warningMs); }
+function gameOver(){ STATE.running=false; elFinalScore.textContent=STATE.score; elFinalWave.textContent=STATE.wave; elGO.style.display='grid'; }
+
+/*** =================== Stars =================== ***/
+function setupStars(){ STATE.stars.length=0; for(let L=0;L<CONFIG.visuals.starfieldLayers;L++){ const n=60+L*50; for(let i=0;i<n;i++) STATE.stars.push(new Star(L)); }}
+
+/*** =================== Loop =================== ***/
+let lastT=performance.now();
+function loop(t){
+  if(!STATE.running) return;
+  const dt=clamp((t-lastT)/1000,0,0.05); lastT=t;
+  if(!STATE.paused){ update(dt,t); draw(t); } else draw(t,true);
+  requestAnimationFrame(loop);
+}
+function update(dt,t){
+  // spawns
+  if(STATE.bossActive){ STATE.boss.update(dt,t); }
+  else{
+    if(STATE.toSpawn>0 && t>=STATE.nextSpawn){
+      const ch = STATE.learning ? pickLearningLetter() : randomLetter();
+      STATE.letters.push(new Enemy(ch)); STATE.toSpawn--; STATE.nextSpawn = t + (STATE.learning? 1100 : spawnIntervalMs());
+    }
+  }
+  // player
+  STATE.player.move(dt); STATE.player.tryShoot(t);
+  // stars
+  for(const s of STATE.stars) s.update(dt);
+  // enemies
+  for(const e of STATE.letters) e.update(dt,t);
+  // bullets
+  for(const b of STATE.playerBullets) b.update(dt);
+  for(const b of STATE.enemyBullets) b.update(dt);
+  // power drops
+  for(const d of STATE.powerDrops) d.update(dt);
+  // particles
+  for(const p of STATE.particles) p.update(dt,t);
+
+  // collisions & cleanup
+  handleCollisions(t);
+
+  STATE.letters = STATE.letters.filter(e=>!e.dead && e.y-e.h<canvas.height);
+  STATE.playerBullets = STATE.playerBullets.filter(b=>!b.dead && b.y+b.r>-10 && b.y-b.r<canvas.height+10);
+  STATE.enemyBullets = STATE.enemyBullets.filter(b=>!b.dead && b.y-b.r<canvas.height+10 && b.y+b.r>-10);
+  STATE.powerDrops = STATE.powerDrops.filter(d=>!d.dead);
+  STATE.particles = STATE.particles.filter(p=>!p.dead);
+
+  // power expiration
+  if(STATE.powerUp && nowMs()>STATE.powerUp.expires) clearPower();
+
+  // wave clear check
+  if(!STATE.bossActive){
+    if(STATE.toSpawn===0 && STATE.letters.length===0 && STATE.enemyBullets.length===0) nextWave();
+  }else{
+    if(!STATE.boss || STATE.boss.dead) nextWave();
+  }
+
+  // UI
+  elScore.textContent = STATE.score;
+  elWave.textContent  = STATE.wave;
+  elLives.textContent = "♥".repeat(STATE.lives);
+  if(!STATE.powerUp){ elPowerTag.className='tag none'; elPowerTag.textContent='None'; elPowerTime.textContent='00:00'; }
+  else { elPowerTag.className='tag '+STATE.powerUp.type; elPowerTag.textContent=STATE.powerUp.type.toUpperCase(); elPowerTime.textContent=fmtTime(Math.max(0,STATE.powerUp.expires-nowMs())); }
+
+  if (STATE.lives<=0) gameOver();
+}
+function handleCollisions(t){
+  // player bullets
+  for(const b of STATE.playerBullets){
+    if(b.dead) continue;
+    if(STATE.bossActive && STATE.boss && !STATE.boss.dead){
+      if(circleRectOverlap(b.x,b.y,b.r, STATE.boss.x,STATE.boss.y,STATE.boss.size,STATE.boss.size)){
+        b.dead=true; STATE.boss.hp--; sfx.hit(); spawnHitParticles(b.x,b.y,CONFIG.boss.color);
+        if(STATE.boss.hp<=0){ STATE.boss.dead=true; addScore(CONFIG.scoring.boss); boomWithShake(); }
+      }
+    }
+    for(const e of STATE.letters){
+      if(e.dead) continue;
+      if(circleRectOverlap(b.x,b.y,b.r, e.x,e.y,e.w,e.h)){
+        b.dead=true; e.dead=true;
+        const pts = isRare(e.ch)?CONFIG.scoring.rare : isVowel(e.ch)?CONFIG.scoring.vowel : CONFIG.scoring.consonant;
+        addScore(pts); spawnHitParticles(e.x+e.w/2,e.y+e.h/2,e.color); maybeDropPowerUp(e.x+e.w/2,e.y+e.h/2); sfx.hit();
+
+        if (STATE.learning){
+          learned.add(e.ch); rebuildGrid(); showLearningPopup(e.ch);
+        } else {
+          // Optional: not every hit (keep it calm)
+          if (Math.random() < 0.35) Speech.speak(e.ch);
+        }
+        break;
+      }
+    }
+  }
+  // enemy bullets vs player
+  for(const b of STATE.enemyBullets){
+    if(b.dead) continue;
+    if(circleRectOverlap(b.x,b.y,b.r, STATE.player.x,STATE.player.y,STATE.player.w,STATE.player.h)){
+      b.dead=true; if(activePower('shield')&&STATE.powerUp.shieldAvailable){ STATE.powerUp.shieldAvailable=false; STATE.player.hasShield=false; clearPower(); }
+      else if(!CONFIG.debug.godMode){ STATE.lives--; }
+      sfx.hit(); spawnHitParticles(STATE.player.x+STATE.player.w/2,STATE.player.y,'#ffe27a');
+    }
+  }
+  // letters reaching bottom
+  for(const e of STATE.letters){
+    if(e.dead) continue;
+    if(e.y+e.h>=canvas.height){
+      e.dead=true;
+      if(activePower('shield')&&STATE.powerUp.shieldAvailable){ STATE.powerUp.shieldAvailable=false; STATE.player.hasShield=false; clearPower(); }
+      else if(!CONFIG.debug.godMode){ STATE.lives--; }
+      spawnHitParticles(e.x+e.w/2,canvas.height-8,e.color);
+    }
+  }
+  // collect power drops
+  for(const d of STATE.powerDrops){
+    if(d.dead) continue;
+    if(circleRectOverlap(d.x,d.y,d.r, STATE.player.x,STATE.player.y,STATE.player.w,STATE.player.h)){
+      d.dead=true; activatePower(d.type);
+    }
+  }
+}
+function addScore(n){ STATE.score+=n; }
+function spawnHitParticles(x,y,color){ if(reducedMotion) return; const [a,b]=CONFIG.visuals.particles.perKill; const n=Math.floor(a+Math.random()*(b-a)); for(let i=0;i<n;i++) STATE.particles.push(new Particle(x,y,color)); }
+function boomWithShake(){ sfx.boom(); if(reducedMotion) return; STATE.shake={t:nowMs(),amp:CONFIG.boss.killShake.amplitudePx*dpr,dur:CONFIG.boss.killShake.durationMs}; }
+function randomLetter(){ return String.fromCharCode(65+Math.floor(Math.random()*26)); }
+function pickLearningLetter(){ const remaining=[]; for(let i=0;i<26;i++){ const ch=String.fromCharCode(65+i); if(!learned.has(ch)) remaining.push(ch); } return remaining.length? choice(remaining): randomLetter(); }
+function circleRectOverlap(cx,cy,r, rx,ry,rw,rh){
+  const x=clamp(cx,rx,rx+rw), y=clamp(cy,ry,ry+rh); const dx=cx-x, dy=cy-y; return dx*dx+dy*dy <= r*r;
+}
+
+/*** =================== Render =================== ***/
+function draw(t,paused=false){
+  // shake
+  let sx=0, sy=0; if(!reducedMotion && STATE.shake.dur>0){ const k=clamp((nowMs()-STATE.shake.t)/STATE.shake.dur,0,1); const amp=(1-k)*STATE.shake.amp; sx=(Math.random()*2-1)*amp; sy=(Math.random()*2-1)*amp; if(k>=1) STATE.shake.dur=0; }
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,canvas.width,canvas.height);
+  // starfield
+  for(const s of STATE.stars) s.draw();
+  ctx.save(); ctx.translate(sx,sy);
+  // bullets
+  for(const b of STATE.playerBullets) b.draw();
+  for(const b of STATE.enemyBullets) b.draw();
+  // boss
+  if(STATE.bossActive && STATE.boss && !STATE.boss.dead) STATE.boss.draw();
+  // enemies
+  for(const e of STATE.letters) e.draw();
+  // particles
+  for(const p of STATE.particles) p.draw(t);
+  // player
+  STATE.player.draw();
+  ctx.restore();
+
+  if(paused){
+    ctx.save(); ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#fff'; ctx.font=`bold ${28*dpr}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('Paused', canvas.width/2, canvas.height/2); ctx.restore();
+  }
+}
+
+/*** =================== Learning Popup =================== ***/
+const popup=document.getElementById('learningPopup'), pLetter=document.getElementById('popupLetter'),
+      pSound=document.getElementById('popupSound'), pWord=document.getElementById('popupWord'), pImg=document.getElementById('popupImage');
+document.getElementById('repeatButton').onclick=()=>{ if(!pLetter.textContent) return; const L=pLetter.textContent; const d=letterData[L]||{sound:'',word:''}; Speech.speak(`The letter ${L} says ${d.sound}, like in ${d.word}.`); };
+
+function showLearningPopup(letter){
+  if(!STATE.running) return;
+  STATE.paused=true;
+  const data=letterData[letter]||{sound:'',word:'',image:'❓'};
+  pLetter.textContent=letter; pSound.textContent=`${data.sound} like in`; pWord.textContent=data.word; pImg.textContent=data.image;
+  popup.style.display='block';
+  // speak with natural pauses
+  Speech.clear();
+  Speech.speak(`Great job! That's the letter ${letter}.`);
+  Speech.speak(`${letter} says ${data.sound}, like in ${data.word}.`);
+  setTimeout(()=>{ popup.style.display='none'; STATE.paused=false; if(STATE.letters.length===0 && STATE.toSpawn===0 && !STATE.bossActive) nextWave(); }, 2200);
+}
+
+/*** =================== Boot =================== ***/
+document.getElementById('modeStatus').textContent='LEARNING';
+document.getElementById('startOverlay').style.display='grid';
+rebuildGrid(); resize(); initSidebarState();
+document.getElementById('startBtn').focus();
+</script>
+</body>
+</html>
