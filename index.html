@@ -54,6 +54,8 @@
 
   /* Top HUD over canvas */
   .hud{position:absolute;left:10px;top:10px;background:rgba(12,16,24,.65);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 10px;backdrop-filter: blur(6px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  #targetAnnounce{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:48px;font-weight:900;color:var(--warn);text-shadow:0 0 12px var(--warn);display:none;pointer-events:none}
+  @keyframes flash{0%,100%{opacity:0}50%{opacity:1}}
 
   /* Overlays */
   .overlay{position:fixed;inset:0;display:grid;place-items:center;background:rgba(3,5,9,.65);backdrop-filter: blur(8px);z-index:10}
@@ -110,6 +112,7 @@
 <div id="app">
   <div id="gameWrap">
     <canvas id="game"></canvas>
+    <div id="targetAnnounce"></div>
     <div class="hud"><strong>Score:</strong> <span id="score">0</span> &nbsp;•&nbsp; <strong>Lives:</strong> <span id="lives">♥♥♥</span> &nbsp;•&nbsp; <strong>Wave:</strong> <span id="wave">1</span></div>
     <div class="mobile" id="mobile">
       <button id="leftBtn">←</button>
@@ -430,7 +433,8 @@ const STATE = {
   score:0, lives:CONFIG.player.lives, wave:1,
   letters:[], enemyBullets:[], playerBullets:[], particles:[], powerDrops:[], stars:[],
   toSpawn:0, nextSpawn:0, bossActive:false, boss:null, bossIndex:0,
-  powerUp:null, player:null, shake:{t:0,amp:0,dur:0}, lastShot: -1e9
+  powerUp:null, player:null, shake:{t:0,amp:0,dur:0}, lastShot: -1e9,
+  targetLetter:null
 };
 
 /*** =================== Entities =================== ***/
@@ -582,10 +586,23 @@ document.getElementById('modeToggle').onclick=toggleMode;
 function nextWave(){
   STATE.wave++; STATE.letters.length=0; STATE.enemyBullets.length=0; STATE.playerBullets.length=0; STATE.powerDrops.length=0; clearPower();
   if(isBossWave()){ STATE.bossActive=true; const letter=CONFIG.boss.cycle[STATE.bossIndex++%CONFIG.boss.cycle.length]; STATE.boss=new Boss(letter); bossWarning(letter); }
-  else { STATE.bossActive=false; STATE.boss=null; STATE.toSpawn = STATE.learning ? 1 : waveLetterCount(); STATE.nextSpawn = nowMs()+800; }
+  else {
+    STATE.bossActive=false; STATE.boss=null;
+    if(STATE.learning){
+      const letter=pickLearningLetter();
+      STATE.targetLetter=letter;
+      announceTarget(letter);
+      STATE.toSpawn=1;
+      STATE.nextSpawn=nowMs()+800;
+    } else {
+      STATE.toSpawn=waveLetterCount();
+      STATE.nextSpawn=nowMs()+800;
+    }
+  }
 }
 function isBossWave(){ return !STATE.learning && STATE.wave%5===0; }
 function bossWarning(letter){ document.getElementById('bossLabel').textContent=letter; document.getElementById('bossOverlay').style.display='grid'; setTimeout(()=>document.getElementById('bossOverlay').style.display='none', CONFIG.boss.warningMs); }
+function announceTarget(letter){ const el=document.getElementById('targetAnnounce'); el.textContent=letter; el.style.display='block'; el.style.animation='none'; void el.offsetWidth; el.style.animation='flash 1s ease-in-out 3'; setTimeout(()=>{el.style.display='none';},1500); Speech.speak(`Target the letter ${letter}`); }
 function gameOver(){ STATE.running=false; elFinalScore.textContent=STATE.score; elFinalWave.textContent=STATE.wave; elGO.style.display='grid'; }
 
 /*** =================== Stars =================== ***/
@@ -604,8 +621,10 @@ function update(dt,t){
   if(STATE.bossActive){ STATE.boss.update(dt,t); }
   else{
     if(STATE.toSpawn>0 && t>=STATE.nextSpawn){
-      const ch = STATE.learning ? pickLearningLetter() : randomLetter();
-      STATE.letters.push(new Enemy(ch)); STATE.toSpawn--; STATE.nextSpawn = t + (STATE.learning? 1100 : spawnIntervalMs());
+      const ch = STATE.learning ? STATE.targetLetter : randomLetter();
+      STATE.letters.push(new Enemy(ch));
+      if(STATE.learning) STATE.targetLetter=null;
+      STATE.toSpawn--; STATE.nextSpawn = t + (STATE.learning? 1100 : spawnIntervalMs());
     }
   }
   // player
