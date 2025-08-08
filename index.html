@@ -75,7 +75,7 @@
   .learning-sound{font-size:34px;color:#ffff00;font-weight:800}
   .learning-word{font-size:42px;color:#00ff88;margin:6px 0;text-transform:capitalize}
   .learning-image{font-size:72px;filter:drop-shadow(0 0 10px rgba(255,255,255,.5))}
-  .repeat-button{margin-top:12px;background:linear-gradient(#00aaff,#0066cc);color:#fff;border:none;padding:10px 20px;font-size:18px;border-radius:999px;font-weight:900}
+  .repeat-button, .continue-button{margin-top:12px;background:linear-gradient(#00aaff,#0066cc);color:#fff;border:none;padding:10px 20px;font-size:18px;border-radius:999px;font-weight:900}
 
   /* MOBILE/NARROW: sidebar becomes its own row (canvas resizes) */
   @media (max-width: 1100px){
@@ -217,6 +217,7 @@
   <div class="learning-word" id="popupWord">ball</div>
   <div class="learning-image" id="popupImage">🎱</div>
   <button class="repeat-button" id="repeatButton">Hear it again!</button>
+  <button class="continue-button" id="continueButton">Continue</button>
 </div>
 
 <script>
@@ -308,7 +309,7 @@ const voice = { mute:false }; // raw flag only
 
 /* NEW: Speech queue with gap and no interruption */
 const Speech = (() => {
-  let q = [], speaking = false, last = 0;
+  let q = [], speaking = false, last = 0, emptyResolvers = [];
   const conf = {
     gap: CONFIG.audio.speechGapMs,
     rate: CONFIG.audio.speechRate,
@@ -325,14 +326,18 @@ const Speech = (() => {
       const vs = speechSynthesis.getVoices();
       u.voice = vs.find(v=>/child|kids|female|google/i.test(v.name)) || vs[0] || null;
       u.rate = conf.rate; u.pitch = conf.pitch; u.volume = conf.volume;
-      u.onend = u.onerror = () => { speaking=false; last=Date.now(); pump(); };
+      u.onend = u.onerror = () => {
+        speaking=false; last=Date.now(); pump();
+        if(!speaking && q.length===0){ emptyResolvers.forEach(r=>r()); emptyResolvers=[]; }
+      };
       speechSynthesis.speak(u);
     }, wait);
   }
   return {
     speak(text){ q.push(text); pump(); },
-    clear(){ if ('speechSynthesis' in window) speechSynthesis.cancel(); q=[]; speaking=false; },
-    setGap(ms){ conf.gap = ms; }
+    clear(){ if ('speechSynthesis' in window) speechSynthesis.cancel(); q=[]; speaking=false; emptyResolvers.forEach(r=>r()); emptyResolvers=[]; },
+    setGap(ms){ conf.gap = ms; },
+    whenEmpty(){ return new Promise(res=>{ if(q.length===0 && !speaking) res(); else emptyResolvers.push(res); }); }
   };
 })();
 
@@ -738,20 +743,27 @@ function draw(t,paused=false){
 
 /*** =================== Learning Popup =================== ***/
 const popup=document.getElementById('learningPopup'), pLetter=document.getElementById('popupLetter'),
-      pSound=document.getElementById('popupSound'), pWord=document.getElementById('popupWord'), pImg=document.getElementById('popupImage');
-document.getElementById('repeatButton').onclick=()=>{ if(!pLetter.textContent) return; const L=pLetter.textContent; const d=letterData[L]||{sound:'',word:''}; Speech.speak(`The letter ${L} says ${d.sound}, like in ${d.word}.`); };
+      pSound=document.getElementById('popupSound'), pWord=document.getElementById('popupWord'), pImg=document.getElementById('popupImage'),
+      btnRepeat=document.getElementById('repeatButton'), btnContinue=document.getElementById('continueButton');
+btnRepeat.onclick=()=>{ if(!pLetter.textContent) return; const L=pLetter.textContent; const d=letterData[L]||{sound:'',word:''}; btnContinue.disabled=true; Speech.speak(`The letter ${L} says ${d.sound}, like in ${d.word}.`); Speech.whenEmpty().then(()=>btnContinue.disabled=false); };
 
-function showLearningPopup(letter){
+async function showLearningPopup(letter){
   if(!STATE.running) return;
   STATE.paused=true;
   const data=letterData[letter]||{sound:'',word:'',image:'❓'};
   pLetter.textContent=letter; pSound.textContent=`${data.sound} like in`; pWord.textContent=data.word; pImg.textContent=data.image;
   popup.style.display='block';
+  btnContinue.disabled=true;
   // speak with natural pauses
   Speech.clear();
   Speech.speak(`Great job! That's the letter ${letter}.`);
   Speech.speak(`${letter} says ${data.sound}, like in ${data.word}.`);
-  setTimeout(()=>{ popup.style.display='none'; STATE.paused=false; if(STATE.letters.length===0 && STATE.toSpawn===0 && !STATE.bossActive) nextWave(); }, 2200);
+  await Speech.whenEmpty();
+  btnContinue.disabled=false;
+  await new Promise(res=>btnContinue.onclick=()=>res());
+  popup.style.display='none';
+  STATE.paused=false;
+  if(STATE.letters.length===0 && STATE.toSpawn===0 && !STATE.bossActive) nextWave();
 }
 
 /*** =================== Boot =================== ***/
