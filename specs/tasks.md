@@ -45,7 +45,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Deliverables: assets/data/archetypes/letters.json; src/systems/archetypes.ts.
   - Success: 26 unique entries validated at boot.
   - Requirements: FR-1, AC-FR-1, Extensibility.
-  - Progress: letters.json + letters.schema.json + README added; runtime loader/validator pending.
+  - Progress: letters.json + letters.schema.json + README added; runtime loader with Ajv validation implemented; 26 entries verified in unit test.
 
 - [ ] T1.5 EnemySystem (basic)
   - Implement entity model, movement & attack strategy registries; A, B, C minimal.
