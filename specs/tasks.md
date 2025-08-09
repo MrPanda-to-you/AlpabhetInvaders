@@ -41,6 +41,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Async loading for images/audio; lazy loading hooks.
   - Deliverables: src/core/assets.ts; preload minimal set (A,B,C, UI), lazy others.
   - Requirements: Performance, FR-5.
+  - Progress: Asset registry and async preload implemented with jsdom-safe loaders; minimal A/B/C phoneme and UI stub registered; unit test added.
 
 - [ ] T1.4 Archetype Registry + Schema
   - Create letters.json + Zod (or manual) validator; load to Map<LetterId, Archetype>.
