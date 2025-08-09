@@ -1,5 +1,6 @@
 import { setUpdater, startLoop } from './core/loop';
 import { enableFpsOverlay, toggleFpsOverlay } from '@ui/fpsOverlay';
+import { createInput, Action } from '@core/input';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement | null;
 if (!canvas) {
@@ -22,6 +23,12 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'F2') {
     toggleFpsOverlay();
   }
+});
+
+// Initialize input and simple binding example
+const input = createInput();
+input.on(Action.Pause, (evt) => {
+  if (evt.down) console.log('Pause toggled');
 });
 
 // Ensure loop runs if not auto-started

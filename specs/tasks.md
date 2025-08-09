@@ -35,6 +35,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Deliverables: src/core/input.ts, action enums, listeners.
   - Success: Input→projectile spawn ≤80ms under harness.
   - Requirements: FR-12, AC-FR-12.
+  - Progress: InputService added with key/mouse/touch mappings, pressed-state tracking, and subscription API; unit tests cover key mappings.
 
 - [ ] T1.3 Asset Loader & Registry
   - Async loading for images/audio; lazy loading hooks.
