@@ -28,6 +28,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Deliverables: src/core/loop.ts, FPS overlay debug toggle.
   - Success: AC-GF-9 threshold computed; 60s sample shows metrics.
   - Requirements: FR-7, AC-GF-9, AC-FR-12.
+  - Progress: Fixed-timestep loop scaffolded; stats collector present; FPS overlay added with F2 toggle and dev auto-enable.
 
 - [ ] T1.2 InputService
   - Map keyboard/mouse/touch to actions; latency budget monitoring hooks.
