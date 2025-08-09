@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://alpabhetinvaders.dev/schema/letters.schema.json",
+  "title": "Alphabet Invaders Enemy Archetypes",
+  "description": "Schema for data-driven letter enemy archetypes (A–Z).",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "letter",
+      "name",
+      "tier",
+      "baseHP",
+      "basePoints",
+      "movementId",
+      "attackId",
+      "audioPhoneme",
+      "spriteSet",
+      "colorTheme"
+    ],
+    "properties": {
+      "letter": {
+        "type": "string",
+        "description": "Uppercase letter identifier",
+        "enum": [
+          "A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
+        ]
+      },
+      "name": { "type": "string", "minLength": 1 },
+      "tier": { "type": "integer", "minimum": 1, "maximum": 5 },
+      "baseHP": { "type": "integer", "minimum": 1 },
+      "basePoints": { "type": "integer", "minimum": 0 },
+      "movementId": { "type": "string", "minLength": 1 },
+      "attackId": { "type": "string", "minLength": 1 },
+      "audioPhoneme": {
+        "type": "string",
+        "description": "Audio asset key or relative path for phoneme playback"
+      },
+      "spriteSet": {
+        "type": "array",
+        "description": "Sprite frame keys from the atlas used to render this archetype",
+        "minItems": 1,
+        "items": { "type": "string", "minLength": 1 }
+      },
+      "colorTheme": { "type": "string", "minLength": 1 },
+      "behaviors": {
+        "type": "array",
+        "description": "Optional behavior tags (e.g., 'boss', 'beam', 'phase', 'erratic')",
+        "items": { "type": "string" }
+      }
+    }
+  }
+}
