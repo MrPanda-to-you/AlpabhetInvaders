@@ -8,20 +8,21 @@ Legend: FR-x = Functional Requirement; AC-FR-x = Acceptance Criterion; AC-GF-x =
 Dependency convention: Tasks listed in order; subtasks within a group can run in parallel unless otherwise noted.
 
 ## Phase 0 – Project & Tooling Baseline
-- [ ] T0.1 Initialize project tooling (TypeScript, Vite, ESLint, Prettier).
+- [x] T0.1 Initialize project tooling (TypeScript, Vite, ESLint, Prettier).
   - Deliverables: package.json, tsconfig.json, vite.config.ts, .eslintrc, .prettierrc.
   - Success: dev server runs, TS builds.
   - Requirements: Non-functional (Maintainability), Performance targets scaffolding.
 
-- [ ] T0.2 Basic folder structure & aliases.
+- [x] T0.2 Basic folder structure & aliases.
   - Deliverables: src/{core,systems,ui,assets,data}, public/.
   - Requirements: Maintainability.
 
-- [ ] T0.3 CI placeholders and test harness setup (Vitest + Playwright).
+- [x] T0.3 CI placeholders and test harness setup (Vitest + Playwright).
   - Deliverables: vitest.config.ts, playwright.config.ts, initial spec files.
   - Requirements: Testability (Non-Functional).
 
 ## Phase 1 – MVP Core Loop, Archetypes, Adaptive Basics (Roadmap P1)
+Branch: feat/phase-1-mvp-core-archetypes (created)
 - [ ] T1.1 GameLoop & Timing
   - Implement fixed timestep update + interpolated render; frame pacing stats collector.
   - Deliverables: src/core/loop.ts, FPS overlay debug toggle.
@@ -44,6 +45,7 @@ Dependency convention: Tasks listed in order; subtasks within a group can run in
   - Deliverables: assets/data/archetypes/letters.json; src/systems/archetypes.ts.
   - Success: 26 unique entries validated at boot.
   - Requirements: FR-1, AC-FR-1, Extensibility.
+  - Progress: letters.json + letters.schema.json + README added; runtime loader/validator pending.
 
 - [ ] T1.5 EnemySystem (basic)
   - Implement entity model, movement & attack strategy registries; A, B, C minimal.
