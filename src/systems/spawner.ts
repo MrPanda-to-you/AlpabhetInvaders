@@ -31,6 +31,26 @@ export function spawnWave(slots: SpawnSlot[], recipe: SpawnRecipe): SpawnResult 
   return { enemies };
 }
 
+export interface SlotGenOptions {
+  originX?: number;
+  originY?: number;
+  cols?: number; // number of columns in the grid
+  dx?: number; // horizontal spacing
+  dy?: number; // vertical spacing
+}
+
+// Generate n slots in a simple grid, row-major order
+export function generateGridSlots(n: number, opts: SlotGenOptions = {}): SpawnSlot[] {
+  const { originX = 0, originY = 0, cols = Math.max(1, n), dx = 32, dy = 32 } = opts;
+  const slots: SpawnSlot[] = [];
+  for (let i = 0; i < n; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    slots.push({ x: originX + col * dx, y: originY + row * dy });
+  }
+  return slots;
+}
+
 // Helper: generate letters for a wave using adaptive engine with review guarantee
 export function generateWaveLetters(
   archetypes: Map<LetterId, EnemyArchetype>,
