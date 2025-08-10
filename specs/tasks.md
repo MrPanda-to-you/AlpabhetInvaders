@@ -54,6 +54,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Implement entity model, movement & attack strategy registries; A, B, C minimal.
   - Deliverables: src/systems/enemies.ts, src/systems/movement.ts, src/systems/attacks.ts.
   - Requirements: FR-1; sets base for FR-10 later.
+  - Progress: Basic Enemy model with update loop; movement (glide_horizontal, zigzag_burst, scuttle_side) and attacks (pellet_slow, pellet_spread_2, claw_lateral) implemented; unit tests for A/B/C pass.
 
 - [ ] T1.6 CollisionSystem + Projectiles
   - Broadphase grid + narrowphase AABB; forgiveness radius per design.
