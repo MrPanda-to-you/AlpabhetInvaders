@@ -72,6 +72,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Hit/miss particles, letter-outline effect; positive/negative SFX hooks.
   - Deliverables: src/systems/feedback.ts, particles.
   - Requirements: FR-3, AC-FR-3.
+  - Progress: Minimal FeedbackSystem added with hit/miss bursts, lifetime update, and purge; unit tests in place.
 
 - [ ] T1.9 Audio System (phonemes + ducking)
   - Voice channel, music/sfx buses, ducking during phonemes.
