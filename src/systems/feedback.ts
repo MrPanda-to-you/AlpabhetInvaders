@@ -11,10 +11,17 @@ export interface Particle {
   lifeMs: number;
 }
 
+export interface FeedbackSfxHooks {
+  onHit?(x: number, y: number): void;
+  onMiss?(x: number, y: number): void;
+  onOutline?(letter: string, x: number, y: number): void;
+}
+
 export interface FeedbackOptions {
   particleCount?: number; // per burst
   lifeMs?: number; // particle lifetime
   outlineLifeMs?: number; // letter-outline lifetime
+  sfx?: FeedbackSfxHooks; // SFX hook points
 }
 
 export type RNG = () => number;
@@ -34,13 +41,15 @@ export interface OutlineEffect {
 export class FeedbackSystem {
   private particles: Particle[] = [];
   private outlines: OutlineEffect[] = [];
-  private opts: Required<FeedbackOptions>;
+  private opts: { particleCount: number; lifeMs: number; outlineLifeMs: number };
+  private sfx?: FeedbackSfxHooks;
   constructor(opts: FeedbackOptions = {}) {
     this.opts = {
       particleCount: opts.particleCount ?? 6,
       lifeMs: opts.lifeMs ?? 900,
       outlineLifeMs: opts.outlineLifeMs ?? 600,
-    } as Required<FeedbackOptions>;
+    };
+    this.sfx = opts.sfx;
   }
 
   getParticles() { return this.particles as readonly Particle[]; }
@@ -48,14 +57,17 @@ export class FeedbackSystem {
 
   hit(x: number, y: number, rng: RNG = Math.random) {
     this.spawnBurst('hit', x, y, rng);
+  this.sfx?.onHit?.(x, y);
   }
 
   miss(x: number, y: number, rng: RNG = Math.random) {
     this.spawnBurst('miss', x, y, rng);
+  this.sfx?.onMiss?.(x, y);
   }
 
   outline(letter: string, x: number, y: number) {
     this.outlines.push({ id: nextOutlineId++, letter, x, y, ageMs: 0, lifeMs: this.opts.outlineLifeMs });
+    this.sfx?.onOutline?.(letter, x, y);
   }
 
   private spawnBurst(kind: EffectKind, x: number, y: number, rng: RNG) {
