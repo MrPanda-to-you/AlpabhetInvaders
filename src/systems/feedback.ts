@@ -14,23 +14,37 @@ export interface Particle {
 export interface FeedbackOptions {
   particleCount?: number; // per burst
   lifeMs?: number; // particle lifetime
+  outlineLifeMs?: number; // letter-outline lifetime
 }
 
 export type RNG = () => number;
 
 let nextParticleId = 1;
+let nextOutlineId = 1;
+
+export interface OutlineEffect {
+  id: number;
+  letter: string; // placeholder; can map to LetterId later
+  x: number;
+  y: number;
+  ageMs: number;
+  lifeMs: number;
+}
 
 export class FeedbackSystem {
   private particles: Particle[] = [];
+  private outlines: OutlineEffect[] = [];
   private opts: Required<FeedbackOptions>;
   constructor(opts: FeedbackOptions = {}) {
     this.opts = {
       particleCount: opts.particleCount ?? 6,
       lifeMs: opts.lifeMs ?? 900,
-    };
+      outlineLifeMs: opts.outlineLifeMs ?? 600,
+    } as Required<FeedbackOptions>;
   }
 
   getParticles() { return this.particles as readonly Particle[]; }
+  getOutlines() { return this.outlines as readonly OutlineEffect[]; }
 
   hit(x: number, y: number, rng: RNG = Math.random) {
     this.spawnBurst('hit', x, y, rng);
@@ -38,6 +52,10 @@ export class FeedbackSystem {
 
   miss(x: number, y: number, rng: RNG = Math.random) {
     this.spawnBurst('miss', x, y, rng);
+  }
+
+  outline(letter: string, x: number, y: number) {
+    this.outlines.push({ id: nextOutlineId++, letter, x, y, ageMs: 0, lifeMs: this.opts.outlineLifeMs });
   }
 
   private spawnBurst(kind: EffectKind, x: number, y: number, rng: RNG) {
@@ -63,12 +81,20 @@ export class FeedbackSystem {
       p.vx *= 0.98;
       p.vy *= 0.98;
     }
+    for (const o of this.outlines) {
+      o.ageMs += dtMs;
+    }
   }
 
   purgeDead() {
     let i = 0;
     while (i < this.particles.length) {
       if (this.particles[i].ageMs >= this.particles[i].lifeMs) this.particles.splice(i, 1);
+      else i++;
+    }
+    i = 0;
+    while (i < this.outlines.length) {
+      if (this.outlines[i].ageMs >= this.outlines[i].lifeMs) this.outlines.splice(i, 1);
       else i++;
     }
   }
