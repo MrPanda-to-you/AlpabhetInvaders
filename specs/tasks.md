@@ -66,6 +66,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Implement weight formula, wave generator; guarantee 10% mastered review; no bosses yet.
   - Deliverables: src/systems/spawner.ts, src/systems/adaptive.ts.
   - Requirements: FR-2, FR-13, AC-FR-2.
+  - Progress: Implemented computeWeights + review picker; spawner wave slots + recipe builder; adaptive picks wired into spawner with integration tests.
 
 - [ ] T1.8 Feedback System (basic)
   - Hit/miss particles, letter-outline effect; positive/negative SFX hooks.
