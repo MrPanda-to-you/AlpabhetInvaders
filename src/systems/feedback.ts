@@ -9,6 +9,8 @@ export interface Particle {
   vy: number;
   ageMs: number;
   lifeMs: number;
+  color: string;
+  intensity: number;
 }
 
 export interface FeedbackSfxHooks {
@@ -22,6 +24,10 @@ export interface FeedbackOptions {
   lifeMs?: number; // particle lifetime
   outlineLifeMs?: number; // letter-outline lifetime
   sfx?: FeedbackSfxHooks; // SFX hook points
+  hitColor?: string;
+  missColor?: string;
+  hitIntensity?: number;
+  missIntensity?: number;
 }
 
 export type RNG = () => number;
@@ -43,6 +49,7 @@ export class FeedbackSystem {
   private outlines: OutlineEffect[] = [];
   private opts: { particleCount: number; lifeMs: number; outlineLifeMs: number };
   private sfx?: FeedbackSfxHooks;
+  private style: { hitColor: string; missColor: string; hitIntensity: number; missIntensity: number };
   constructor(opts: FeedbackOptions = {}) {
     this.opts = {
       particleCount: opts.particleCount ?? 6,
@@ -50,6 +57,12 @@ export class FeedbackSystem {
       outlineLifeMs: opts.outlineLifeMs ?? 600,
     };
     this.sfx = opts.sfx;
+    this.style = {
+      hitColor: opts.hitColor ?? '#3ae374',
+      missColor: opts.missColor ?? '#ff4757',
+      hitIntensity: opts.hitIntensity ?? 1.0,
+      missIntensity: opts.missIntensity ?? 0.7,
+    };
   }
 
   getParticles() { return this.particles as readonly Particle[]; }
@@ -72,13 +85,15 @@ export class FeedbackSystem {
 
   private spawnBurst(kind: EffectKind, x: number, y: number, rng: RNG) {
     const n = this.opts.particleCount;
+  const styleColor = kind === 'hit' ? this.style.hitColor : this.style.missColor;
+  const styleIntensity = kind === 'hit' ? this.style.hitIntensity : this.style.missIntensity;
     for (let i = 0; i < n; i++) {
       const angle = (rng() * Math.PI * 2);
       const speed = 40 + rng() * 60; // 40..100 px/s
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
       this.particles.push({
-        id: nextParticleId++, kind, x, y, vx, vy, ageMs: 0, lifeMs: this.opts.lifeMs,
+    id: nextParticleId++, kind, x, y, vx, vy, ageMs: 0, lifeMs: this.opts.lifeMs, color: styleColor, intensity: styleIntensity,
       });
     }
   }
