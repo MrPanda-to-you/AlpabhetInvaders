@@ -78,3 +78,22 @@ export function buildRecipeFromArchetypes(
   }
   return { letters, movementByLetter, attackByLetter, hpByLetter } as SpawnRecipe;
 }
+
+export interface WaveFactoryOptions {
+  reviewPercent?: number;
+  masteredThreshold?: number;
+  rng?: () => number;
+  slots?: SpawnSlot[]; // if omitted, caller must supply slots
+}
+
+export function createWave(
+  archetypes: Map<LetterId, EnemyArchetype>,
+  stats: AdaptiveState,
+  n: number,
+  opts: WaveFactoryOptions = {},
+): SpawnResult {
+  const letters = generateWaveLetters(archetypes, stats, n, opts);
+  const recipe = buildRecipeFromArchetypes(archetypes, letters);
+  const slots = opts.slots ?? generateGridSlots(n);
+  return spawnWave(slots, recipe);
+}
