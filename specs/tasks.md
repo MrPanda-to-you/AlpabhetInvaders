@@ -60,6 +60,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Broadphase grid + narrowphase AABB; forgiveness radius per design.
   - Deliverables: src/systems/collision.ts, src/systems/projectiles.ts.
   - Requirements: FR-7 (performance), AC-GF Polish.
+  - Progress: Added SpatialHash broadphase, AABB and circle-vs-AABB checks with forgiveness; basic projectile model/update/culling; unit tests for collisions and projectiles passing.
 
 - [ ] T1.7 Spawner v1 + Adaptive Engine v1
   - Implement weight formula, wave generator; guarantee 10% mastered review; no bosses yet.
