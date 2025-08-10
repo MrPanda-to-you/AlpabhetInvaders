@@ -28,6 +28,8 @@ export interface FeedbackOptions {
   missColor?: string;
   hitIntensity?: number;
   missIntensity?: number;
+  pooling?: boolean;
+  poolCap?: number; // max cached dead particles
 }
 
 export type RNG = () => number;
@@ -50,6 +52,9 @@ export class FeedbackSystem {
   private opts: { particleCount: number; lifeMs: number; outlineLifeMs: number };
   private sfx?: FeedbackSfxHooks;
   private style: { hitColor: string; missColor: string; hitIntensity: number; missIntensity: number };
+  private pooling = false;
+  private poolCap = 128;
+  private pool: Particle[] = [];
   constructor(opts: FeedbackOptions = {}) {
     this.opts = {
       particleCount: opts.particleCount ?? 6,
@@ -63,6 +68,8 @@ export class FeedbackSystem {
       hitIntensity: opts.hitIntensity ?? 1.0,
       missIntensity: opts.missIntensity ?? 0.7,
     };
+  this.pooling = !!opts.pooling;
+  this.poolCap = Math.max(0, opts.poolCap ?? 128);
   }
 
   getParticles() { return this.particles as readonly Particle[]; }
@@ -92,9 +99,17 @@ export class FeedbackSystem {
       const speed = 40 + rng() * 60; // 40..100 px/s
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
-      this.particles.push({
-    id: nextParticleId++, kind, x, y, vx, vy, ageMs: 0, lifeMs: this.opts.lifeMs, color: styleColor, intensity: styleIntensity,
-      });
+      let p: Particle | undefined;
+      if (this.pooling && this.pool.length > 0) {
+        p = this.pool.pop()!;
+        // re-init
+        p.id = nextParticleId++;
+        p.kind = kind;
+        p.x = x; p.y = y; p.vx = vx; p.vy = vy; p.ageMs = 0; p.lifeMs = this.opts.lifeMs; p.color = styleColor; p.intensity = styleIntensity;
+      } else {
+        p = { id: nextParticleId++, kind, x, y, vx, vy, ageMs: 0, lifeMs: this.opts.lifeMs, color: styleColor, intensity: styleIntensity };
+      }
+      this.particles.push(p);
     }
   }
 
@@ -116,7 +131,10 @@ export class FeedbackSystem {
   purgeDead() {
     let i = 0;
     while (i < this.particles.length) {
-      if (this.particles[i].ageMs >= this.particles[i].lifeMs) this.particles.splice(i, 1);
+      if (this.particles[i].ageMs >= this.particles[i].lifeMs) {
+        const dead = this.particles.splice(i, 1)[0];
+        if (this.pooling && this.pool.length < this.poolCap) this.pool.push(dead);
+      }
       else i++;
     }
     i = 0;
