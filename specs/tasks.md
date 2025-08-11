@@ -80,10 +80,11 @@ Branch: feat/phase-1-mvp-core-archetypes (active)
   - Requirements: FR-5, FR-15, AC-FR-13.
   - Progress: AudioSystem scaffolded with master/music/sfx/voice buses, decibel-based ducking and configurable duckFadeMs; FeedbackSystem wired to audio via adapter; implemented playSfx routing via asset cache; helpers registerPhonemesAZ/registerSfxDefaults + bootAssets; runtime helper to preload phonemes for upcoming letters; added equal-power music crossfade envelope on setMusic (fade-in/out) with tests; tests cover ducking (incl. fade), bus gains/mutes, sfx routing, A–Z registration + preload, runtime preload, and crossfade envelope.
 
-- [ ] T1.10 UI States & HUD (minimal)
+- [x] T1.10 UI States & HUD (minimal)
   - Title, Mode Select (Learn, Mixed), Play, Wave Summary; basic HUD (score, lives, targets).
   - Deliverables: src/ui/screens/*, src/ui/hud.ts.
   - Requirements: FR-11.
+  - Progress: Minimal UIStateManager (title/play/summary) and HUD (score, lives, wave, targets) implemented; unit tests for state transitions and HUD rendering; integrated in main (starts in title state).
 
 - [ ] T1.11 Persistence (Local)
   - Save/load LetterStats, SessionRecord; simple checksum.
