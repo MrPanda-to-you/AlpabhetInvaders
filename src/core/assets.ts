@@ -114,3 +114,10 @@ export function registerPhonemesAZ(base = '', lang = 'en') {
   }
   registerAssets(defs);
 }
+
+export function registerSfxDefaults(base = '') {
+  registerAssets([
+    { key: 'sfx/hit', type: 'audio', url: `${base}/sfx/hit.ogg` },
+    { key: 'sfx/miss', type: 'audio', url: `${base}/sfx/miss.ogg` },
+  ]);
+}

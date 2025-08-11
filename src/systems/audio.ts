@@ -1,3 +1,5 @@
+import { getAsset, isLoaded } from '../core/assets';
+
 export type BusName = 'master' | 'music' | 'sfx' | 'voice';
 
 export interface AudioOptions {
@@ -67,6 +69,29 @@ export class AudioSystem {
       musicGainWhileDucked: this.getEffectiveGain('music'),
     };
   }
+
+  // Generic SFX play: routes through 'sfx' bus and attempts to use asset cache
+  playSfx(key: string, opts?: PlayOpts) {
+    const vol = Math.max(0, Math.min(1, opts?.volume ?? 1));
+    // Effective gain includes master and sfx bus
+    const effective = this.getEffectiveGain('sfx') * vol;
+    if (isLoaded(key)) {
+      const asset = getAsset<unknown>(key);
+      // Only attempt playback if this looks like an HTMLAudioElement
+      // Avoid issues in jsdom where we cache placeholders.
+      if (typeof HTMLAudioElement !== 'undefined' && asset instanceof HTMLAudioElement) {
+        try {
+          const inst = asset.cloneNode(true) as HTMLAudioElement;
+          inst.volume = Math.max(0, Math.min(1, effective));
+          // Fire and forget; ignore play() promise in browsers that require user gesture
+          void inst.play?.();
+        } catch {
+          // ignore playback errors; test envs may not support audio
+        }
+      }
+    }
+    return { bus: 'sfx' as const, key, volume: vol, effectiveGain: effective };
+  }
 }
 
 export function makeDefaultAudio(opts?: AudioOptions) {
@@ -87,9 +112,7 @@ export function makeFeedbackAudioAdapter(audio: AudioSystem): FeedbackAudioAdapt
       audio.playPhoneme(`phoneme/${L}`, durationSec);
     },
     playSfx: (key: string, volume?: number) => {
-      // For now, this is a no-op placeholder; later route to sfx bus
-      // and potentially to HTMLAudioElement via assets cache
-      void key; void volume;
+  audio.playSfx(key, { volume });
     },
   };
 }
