@@ -22,59 +22,59 @@ Dependency convention: Tasks listed in order; subtasks within a group can run in
   - Requirements: Testability (Non-Functional).
 
 ## Phase 1 – MVP Core Loop, Archetypes, Adaptive Basics (Roadmap P1)
-Branch: feat/phase-1-mvp-core-archetypes (created)
-- [ ] T1.1 GameLoop & Timing
+Branch: feat/phase-1-mvp-core-archetypes (active)
+- [x] T1.1 GameLoop & Timing
   - Implement fixed timestep update + interpolated render; frame pacing stats collector.
   - Deliverables: src/core/loop.ts, FPS overlay debug toggle.
   - Success: AC-GF-9 threshold computed; 60s sample shows metrics.
   - Requirements: FR-7, AC-GF-9, AC-FR-12.
   - Progress: Fixed-timestep loop scaffolded; stats collector present; FPS overlay added with F2 toggle and dev auto-enable.
 
-- [ ] T1.2 InputService
+- [x] T1.2 InputService
   - Map keyboard/mouse/touch to actions; latency budget monitoring hooks.
   - Deliverables: src/core/input.ts, action enums, listeners.
   - Success: Input→projectile spawn ≤80ms under harness.
   - Requirements: FR-12, AC-FR-12.
   - Progress: InputService added with key/mouse/touch mappings, pressed-state tracking, and subscription API; unit tests cover key mappings.
 
-- [ ] T1.3 Asset Loader & Registry
+- [x] T1.3 Asset Loader & Registry
   - Async loading for images/audio; lazy loading hooks.
   - Deliverables: src/core/assets.ts; preload minimal set (A,B,C, UI), lazy others.
   - Requirements: Performance, FR-5.
   - Progress: Asset registry and async preload implemented with jsdom-safe loaders; minimal A/B/C phoneme and UI stub registered; unit test added.
 
-- [ ] T1.4 Archetype Registry + Schema
+- [x] T1.4 Archetype Registry + Schema
   - Create letters.json + Zod (or manual) validator; load to Map<LetterId, Archetype>.
   - Deliverables: assets/data/archetypes/letters.json; src/systems/archetypes.ts.
   - Success: 26 unique entries validated at boot.
   - Requirements: FR-1, AC-FR-1, Extensibility.
   - Progress: letters.json + letters.schema.json + README added; runtime loader with Ajv validation implemented; 26 entries verified in unit test.
 
-- [ ] T1.5 EnemySystem (basic)
+- [x] T1.5 EnemySystem (basic)
   - Implement entity model, movement & attack strategy registries; A, B, C minimal.
   - Deliverables: src/systems/enemies.ts, src/systems/movement.ts, src/systems/attacks.ts.
   - Requirements: FR-1; sets base for FR-10 later.
   - Progress: Basic Enemy model with update loop; movement (glide_horizontal, zigzag_burst, scuttle_side) and attacks (pellet_slow, pellet_spread_2, claw_lateral) implemented; unit tests for A/B/C pass.
 
-- [ ] T1.6 CollisionSystem + Projectiles
+- [x] T1.6 CollisionSystem + Projectiles
   - Broadphase grid + narrowphase AABB; forgiveness radius per design.
   - Deliverables: src/systems/collision.ts, src/systems/projectiles.ts.
   - Requirements: FR-7 (performance), AC-GF Polish.
   - Progress: Added SpatialHash broadphase, AABB and circle-vs-AABB checks with forgiveness; basic projectile model/update/culling; unit tests for collisions and projectiles passing.
 
-- [ ] T1.7 Spawner v1 + Adaptive Engine v1
+- [x] T1.7 Spawner v1 + Adaptive Engine v1
   - Implement weight formula, wave generator; guarantee 10% mastered review; no bosses yet.
   - Deliverables: src/systems/spawner.ts, src/systems/adaptive.ts.
   - Requirements: FR-2, FR-13, AC-FR-2.
   - Progress: Implemented computeWeights + review picker; spawner wave slots + recipe builder; adaptive picks wired into spawner with integration tests.
 
-- [ ] T1.8 Feedback System (basic)
+- [x] T1.8 Feedback System (basic)
   - Hit/miss particles, letter-outline effect; positive/negative SFX hooks.
   - Deliverables: src/systems/feedback.ts, particles.
   - Requirements: FR-3, AC-FR-3.
   - Progress: Minimal FeedbackSystem added with hit/miss bursts, lifetime update, and purge; extended with letter-outline placeholder, SFX hook points, particle styling (color/intensity), and optional pooling; unit tests cover each.
 
-- [ ] T1.9 Audio System (phonemes + ducking)
+- [x] T1.9 Audio System (phonemes + ducking)
   - Voice channel, music/sfx buses, ducking during phonemes.
   - Deliverables: src/systems/audio.ts, load phoneme files for A–Z.
   - Requirements: FR-5, FR-15, AC-FR-13.
@@ -89,7 +89,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Save/load LetterStats, SessionRecord; simple checksum.
   - Deliverables: src/core/storage.ts.
   - Requirements: FR-4, FR-9.
-  - Progress: Minimal storage module added with JSON helpers; audio settings gains (master/music/sfx/voice) persisted and applied at startup; lightweight in-game Audio Settings panel (F3) to adjust bus gains and duckingDb/duckFadeMs with live-apply and persistence; unit test covers clamping and round-trip.
+  - Progress: Audio settings persistence DONE (panel + live apply). LetterStats/SessionRecord + checksum PENDING.
 
 - [ ] T1.12 Accessibility (baseline)
   - Dyslexia font toggle, keyboard-only flow, captions for phonemes.
@@ -143,11 +143,11 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Deliverables: src/systems/combo.ts, HUD indicator.
   - Requirements: AC-GF-1, AC-GF-2.
 
-- [ ] T3.2 Dynamic Music Layering
+- [ ] T3.2 Dynamic Music Layering (partial)
   - Percussion at x2, arpeggio at x3; 400ms fades; victory sting.
   - Deliverables: audio stem control in AudioSystem.
   - Requirements: AC-GF-3, FR-15.
-  - Progress: Equal-power crossfade envelope implemented for setMusic (fade-in/out, configurable musicFadeMs) with tests; stem routing scaffold (setMusic/getCurrentMusic) in place; layering controls TBD.
+  - Progress: Crossfade envelope DONE; stem routing scaffold DONE; multi-stem layering & fades between layers PENDING.
 
 - [ ] T3.3 Surprise Events
   - Event scheduler + scripts for Meteor Rain, Bonus Comet, Time Bubble; exclusivity + spacing.
