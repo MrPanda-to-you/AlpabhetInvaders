@@ -72,3 +72,24 @@ export class AudioSystem {
 export function makeDefaultAudio(opts?: AudioOptions) {
   return new AudioSystem(opts);
 }
+
+// Lightweight adapter for FeedbackSystem wiring
+export interface FeedbackAudioAdapter {
+  playPhoneme(letter: string, durationSec: number): void;
+  playSfx?(key: string, volume?: number): void;
+}
+
+export function makeFeedbackAudioAdapter(audio: AudioSystem): FeedbackAudioAdapter {
+  return {
+    playPhoneme: (letter: string, durationSec: number) => {
+      // Map letter to asset key pattern used by assets registry
+      const L = (letter || '').toUpperCase();
+      audio.playPhoneme(`phoneme/${L}`, durationSec);
+    },
+    playSfx: (key: string, volume?: number) => {
+      // For now, this is a no-op placeholder; later route to sfx bus
+      // and potentially to HTMLAudioElement via assets cache
+      void key; void volume;
+    },
+  };
+}

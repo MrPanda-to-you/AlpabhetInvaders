@@ -16,4 +16,21 @@ describe('Feedback System - SFX hooks', () => {
     fs.outline('Z', 5, 6);
     expect(calls).toEqual(['hit:1,2', 'miss:3,4', 'outline:Z@5,6']);
   });
+
+  it('wires to audio adapter for outline phoneme and sfx for hit/miss', () => {
+    const calls: string[] = [];
+    const audio = {
+      playPhoneme: (letter: string, duration: number) => calls.push(`voice:${letter}:${duration}`),
+      playSfx: (key: string, vol?: number) => calls.push(`sfx:${key}:${vol ?? 1}`),
+    };
+    const fs = new FeedbackSystem({ audio });
+    fs.hit(0, 0, () => 0.1);
+    fs.miss(0, 0, () => 0.2);
+    fs.outline('a', 0, 0);
+    expect(calls).toEqual([
+      'sfx:sfx/hit:0.9',
+      'sfx:sfx/miss:0.6',
+      'voice:a:0.5',
+    ]);
+  });
 });

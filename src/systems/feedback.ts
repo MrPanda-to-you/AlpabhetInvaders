@@ -19,6 +19,12 @@ export interface FeedbackSfxHooks {
   onOutline?(letter: string, x: number, y: number): void;
 }
 
+// Optional audio wiring for feedback events
+export interface FeedbackAudio {
+  playPhoneme(letter: string, durationSec: number): void;
+  playSfx?(key: string, volume?: number): void;
+}
+
 export interface FeedbackOptions {
   particleCount?: number; // per burst
   lifeMs?: number; // particle lifetime
@@ -30,6 +36,7 @@ export interface FeedbackOptions {
   missIntensity?: number;
   pooling?: boolean;
   poolCap?: number; // max cached dead particles
+  audio?: FeedbackAudio; // optional audio adapter
 }
 
 export type RNG = () => number;
@@ -55,6 +62,7 @@ export class FeedbackSystem {
   private pooling = false;
   private poolCap = 128;
   private pool: Particle[] = [];
+  private audio?: FeedbackAudio;
   constructor(opts: FeedbackOptions = {}) {
     this.opts = {
       particleCount: opts.particleCount ?? 6,
@@ -62,6 +70,7 @@ export class FeedbackSystem {
       outlineLifeMs: opts.outlineLifeMs ?? 600,
     };
     this.sfx = opts.sfx;
+  this.audio = opts.audio;
     this.style = {
       hitColor: opts.hitColor ?? '#3ae374',
       missColor: opts.missColor ?? '#ff4757',
@@ -78,16 +87,22 @@ export class FeedbackSystem {
   hit(x: number, y: number, rng: RNG = Math.random) {
     this.spawnBurst('hit', x, y, rng);
   this.sfx?.onHit?.(x, y);
+  // play a short positive click SFX via audio adapter if present
+  this.audio?.playSfx?.('sfx/hit', 0.9);
   }
 
   miss(x: number, y: number, rng: RNG = Math.random) {
     this.spawnBurst('miss', x, y, rng);
   this.sfx?.onMiss?.(x, y);
+  // play a subtle miss SFX if present
+  this.audio?.playSfx?.('sfx/miss', 0.6);
   }
 
   outline(letter: string, x: number, y: number) {
     this.outlines.push({ id: nextOutlineId++, letter, x, y, ageMs: 0, lifeMs: this.opts.outlineLifeMs });
     this.sfx?.onOutline?.(letter, x, y);
+  // pronounce the letter briefly via voice channel if adapter provided
+  this.audio?.playPhoneme(letter, 0.5);
   }
 
   private spawnBurst(kind: EffectKind, x: number, y: number, rng: RNG) {

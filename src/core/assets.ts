@@ -104,3 +104,13 @@ export function registerMinimalABCUi() {
     { key: 'phoneme/C', type: 'audio', url: `${base}/phonemes/en/C.ogg` },
   ]);
 }
+
+// Helper to register all A–Z phoneme assets for a language (default 'en')
+export function registerPhonemesAZ(base = '', lang = 'en') {
+  const defs: AssetDef[] = [];
+  for (let i = 65; i <= 90; i++) {
+    const L = String.fromCharCode(i);
+    defs.push({ key: `phoneme/${L}`, type: 'audio', url: `${base}/phonemes/${lang}/${L}.ogg` });
+  }
+  registerAssets(defs);
+}
