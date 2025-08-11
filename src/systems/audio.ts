@@ -26,6 +26,7 @@ export class AudioSystem {
     voice: { gain: 1, muted: false },
   };
   private voiceActiveUntil = 0;
+  private currentMusic?: { key: string };
 
   constructor(opts: AudioOptions = {}) {
     const { duckingDb = -6, getNow = () => performance.now() / 1000, duckFadeMs = 150 } = opts;
@@ -102,6 +103,14 @@ export class AudioSystem {
     }
     return { bus: 'sfx' as const, key, volume: vol, effectiveGain: effective };
   }
+
+  // Simple music stem routing: store current stem key and return effective gain
+  setMusic(key?: string) {
+    this.currentMusic = key ? { key } : undefined;
+    return this.getEffectiveGain('music');
+  }
+
+  getCurrentMusic() { return this.currentMusic?.key; }
 }
 
 export function makeDefaultAudio(opts?: AudioOptions) {

@@ -78,7 +78,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Voice channel, music/sfx buses, ducking during phonemes.
   - Deliverables: src/systems/audio.ts, load phoneme files for A–Z.
   - Requirements: FR-5, FR-15, AC-FR-13.
-  - Progress: AudioSystem scaffolded with master/music/sfx/voice buses, decibel-based ducking; FeedbackSystem wired to audio via adapter; implemented playSfx routing through sfx bus using asset cache; added helpers registerPhonemesAZ and registerSfxDefaults; tests cover ducking, bus gains/mutes, sfx routing, and A–Z phoneme registration + preload.
+  - Progress: AudioSystem scaffolded with master/music/sfx/voice buses, decibel-based ducking and configurable duckFadeMs; FeedbackSystem wired to audio via adapter; implemented playSfx routing via asset cache; helpers registerPhonemesAZ/registerSfxDefaults + bootAssets; runtime helper to preload phonemes for upcoming letters; tests cover ducking (incl. fade), bus gains/mutes, sfx routing, A–Z registration + preload, and runtime preload.
 
 - [ ] T1.10 UI States & HUD (minimal)
   - Title, Mode Select (Learn, Mixed), Play, Wave Summary; basic HUD (score, lives, targets).
@@ -147,6 +147,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Percussion at x2, arpeggio at x3; 400ms fades; victory sting.
   - Deliverables: audio stem control in AudioSystem.
   - Requirements: AC-GF-3, FR-15.
+  - Progress: Music stem routing scaffolded (setMusic/getCurrentMusic) with bus gain application; groundwork for layering/fades.
 
 - [ ] T3.3 Surprise Events
   - Event scheduler + scripts for Meteor Rain, Bonus Comet, Time Bubble; exclusivity + spacing.

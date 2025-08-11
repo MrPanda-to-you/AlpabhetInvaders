@@ -38,9 +38,9 @@ input.on(Action.Pause, (evt) => {
 });
 
 // Initialize audio system and adapter for future wiring into systems
-const audio = new AudioSystem();
-// Apply persisted audio gains
 const audioSettings = loadAudioSettings();
+const audio = new AudioSystem({ duckFadeMs: audioSettings.duckFadeMs, duckingDb: audioSettings.duckingDb });
+// Apply persisted audio gains
 for (const [bus, gain] of Object.entries(audioSettings.gains) as [keyof typeof audioSettings.gains, number][]) {
   audio.setBusGain(bus, gain);
 }

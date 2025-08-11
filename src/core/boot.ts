@@ -22,3 +22,9 @@ export async function bootAssets(cfg: BootConfig = {}): Promise<LoadSummary> {
   const keys = cfg.preloadKeys ?? DEFAULT_PRELOAD_KEYS;
   return preload(keys);
 }
+
+// Opportunistic preload for upcoming letters (e.g., next wave)
+export async function preloadPhonemesForLetters(letters: string[]): Promise<LoadSummary> {
+  const keys = Array.from(new Set(letters.map((L) => `phoneme/${(L || '').toUpperCase()}`)));
+  return preload(keys);
+}
