@@ -1,5 +1,6 @@
 import type { LetterId, EnemyArchetype } from './archetypes';
 import { pickWithReview, type AdaptiveState } from './adaptive';
+import { preloadPhonemesForLetters } from '../core/boot';
 import { makeEnemy, type Enemy } from './enemies';
 
 export interface SpawnSlot { x: number; y: number }
@@ -84,6 +85,7 @@ export interface WaveFactoryOptions {
   masteredThreshold?: number;
   rng?: () => number;
   slots?: SpawnSlot[]; // if omitted, caller must supply slots
+  preloadPhonemes?: boolean; // opportunistically preload phonemes for selected letters (default: true)
 }
 
 export function createWave(
@@ -93,6 +95,10 @@ export function createWave(
   opts: WaveFactoryOptions = {},
 ): SpawnResult {
   const letters = generateWaveLetters(archetypes, stats, n, opts);
+  // Opportunistically preload phonemes for the selected letters; fire-and-forget
+  if (opts.preloadPhonemes !== false) {
+    void preloadPhonemesForLetters(letters as unknown as string[]);
+  }
   const recipe = buildRecipeFromArchetypes(archetypes, letters);
   const slots = opts.slots ?? generateGridSlots(n);
   return spawnWave(slots, recipe);
