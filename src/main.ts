@@ -7,6 +7,8 @@ import { loadAudioSettings, saveAudioSettings } from './core/settings';
 import { mountAudioSettingsPanel } from './ui/audioSettingsPanel';
 import { UIStateManager } from './ui/uiStates';
 import { HUD } from './ui/hud';
+import { StartScreen } from './ui/screens/startScreen';
+import { WaveSummary } from './ui/screens/waveSummary';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement | null;
 if (!canvas) {
@@ -17,6 +19,8 @@ if (!canvas) {
 // --- UI State and HUD integration ---
 const ui = new UIStateManager();
 const hud = new HUD({ score: 0, lives: 3, wave: 1 });
+const startScreen = new StartScreen(ui);
+const summary = new WaveSummary(ui);
 
 function update(_dt: number) {
   // Example: update HUD (replace with real game logic)
@@ -36,6 +40,13 @@ ui.onChange((state) => {
 });
 // Start in title state
 ui.setState('title');
+
+// Demo: after 5 seconds in play, show a summary (placeholder logic)
+setTimeout(() => {
+  if (ui.getState() === 'play') {
+    summary.show({ wave: 1, score: 123, lettersHit: 20, accuracy: 0.85 });
+  }
+}, 5000);
 
 setUpdater(update);
 

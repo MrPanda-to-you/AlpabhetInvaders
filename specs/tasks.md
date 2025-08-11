@@ -84,7 +84,7 @@ Branch: feat/phase-1-mvp-core-archetypes (active)
   - Title, Mode Select (Learn, Mixed), Play, Wave Summary; basic HUD (score, lives, targets).
   - Deliverables: src/ui/screens/*, src/ui/hud.ts.
   - Requirements: FR-11.
-  - Progress: Minimal UIStateManager (title/play/summary) and HUD (score, lives, wave, targets) implemented; unit tests for state transitions and HUD rendering; integrated in main (starts in title state).
+  - Progress: Minimal UIStateManager (title/play/summary) and HUD implemented + start screen & wave summary overlays with tests (start_screen, wave_summary); integrated in main.
 
 - [ ] T1.11 Persistence (Local)
   - Save/load LetterStats, SessionRecord; simple checksum.
