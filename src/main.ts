@@ -9,6 +9,7 @@ import { UIStateManager } from './ui/uiStates';
 import { HUD } from './ui/hud';
 import { StartScreen } from './ui/screens/startScreen';
 import { WaveSummary } from './ui/screens/waveSummary';
+import { AccessibilityManager } from './ui/accessibility';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement | null;
 if (!canvas) {
@@ -21,6 +22,7 @@ const ui = new UIStateManager();
 const hud = new HUD({ score: 0, lives: 3, wave: 1 });
 const startScreen = new StartScreen(ui);
 const summary = new WaveSummary(ui);
+const accessibility = new AccessibilityManager();
 
 function update(_dt: number) {
   // Example: update HUD (replace with real game logic)
@@ -66,6 +68,12 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'F3') {
     mountAudioSettingsPanel(audio);
   }
+  if (e.key === 'F6') { // Toggle dyslexia font
+    accessibility.toggleDyslexiaFont();
+  }
+  if (e.key === 'F7') { // Toggle phoneme captions
+    accessibility.setCaptionsEnabled(!accessibility.captionsEnabled());
+  }
 });
 
 // Initialize input and simple binding example
@@ -82,6 +90,12 @@ for (const [bus, gain] of Object.entries(audioSettings.gains) as [keyof typeof a
   audio.setBusGain(bus, gain);
 }
 const feedbackAudio = makeFeedbackAudioAdapter(audio);
+// Wrap phoneme playback to also caption
+const originalPlayPhoneme = feedbackAudio.playPhoneme.bind(feedbackAudio);
+(feedbackAudio as any).playPhoneme = (letter: string, durationSec: number) => {
+  originalPlayPhoneme(letter, durationSec);
+  accessibility.captionPhoneme(letter);
+};
 // feedback system will consume `feedbackAudio` when integrated
 
 // Ensure loop runs if not auto-started

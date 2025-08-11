@@ -1,7 +1,7 @@
 # Alphabet Invaders – Implementation Tasks (tasks.md)
 Version: 1.0 (aligned with requirements v1.0 and design v1.0)
 Status: Draft for execution
-Last Updated: 2025-08-08
+Last Updated: 2025-08-11
 
 Legend: FR-x = Functional Requirement; AC-FR-x = Acceptance Criterion; AC-GF-x = Game Feel Acceptance.
 
@@ -92,15 +92,17 @@ Branch: feat/phase-1-mvp-core-archetypes (active)
   - Requirements: FR-4, FR-9.
   - Progress: Audio settings + SessionRecord + LetterStats persistence with checksum integrity check implemented; APIs (createEmptySession/loadSession/saveSession/updateLetterStat) and tests (session_persistence) added.
 
-- [ ] T1.12 Accessibility (baseline)
+- [x] T1.12 Accessibility (baseline)
   - Dyslexia font toggle, keyboard-only flow, captions for phonemes.
   - Deliverables: src/ui/accessibility.ts, CSS var themes.
   - Requirements: FR-6, Non-Functional Accessibility.
+  - Progress: AccessibilityManager added with dyslexia font toggle (F6), phoneme caption aria-live region (F7 toggle), persistence of settings; tests validate toggle persistence and caption timing.
 
-- [ ] T1.13 Expand archetypes to all 26
+- [x] T1.13 Expand archetypes to all 26
   - Implement movement/attack subsets to represent each letter minimally.
   - Deliverables: completed letters.json entries + placeholder sprites/audio wiring.
   - Requirements: FR-1, Table in §4 requirements.
+  - Progress: Added minimal movement and attack strategies to cover all movementId/attackId referenced by letters.json; registry coverage test ensures mappings. Visuals remain placeholders; future polish in T2.
 
 - [ ] T1.14 MVP Tests & Harness
   - Unit: adaptive weights, archetype validation; Integration: 3-wave simulation; Performance harness (20 enemies + 30 projectiles, FPS ≥55).
