@@ -4,6 +4,7 @@ import { createInput, Action } from '@core/input';
 import { bootAssets } from '@core/boot';
 import { AudioSystem, makeFeedbackAudioAdapter } from './systems/audio';
 import { loadAudioSettings, saveAudioSettings } from './core/settings';
+import { mountAudioSettingsPanel } from './ui/audioSettingsPanel';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement | null;
 if (!canvas) {
@@ -28,6 +29,9 @@ if (import.meta && (import.meta as any).env?.DEV) {
 window.addEventListener('keydown', (e) => {
   if (e.key === 'F2') {
     toggleFpsOverlay();
+  }
+  if (e.key === 'F3') {
+    mountAudioSettingsPanel(audio);
   }
 });
 

@@ -6,6 +6,7 @@ export interface AudioOptions {
   duckingDb?: number; // attenuation applied to music when voice active
   getNow?: () => number; // injectable clock for tests (seconds)
   duckFadeMs?: number; // fade out time for ducking tail (ms)
+  musicFadeMs?: number; // crossfade duration for setMusic (ms)
 }
 
 export interface PlayOpts {
@@ -26,11 +27,12 @@ export class AudioSystem {
     voice: { gain: 1, muted: false },
   };
   private voiceActiveUntil = 0;
-  private currentMusic?: { key: string };
+  private currentMusic?: { key: string; startedAt: number };
+  private previousMusic?: { key: string; switchAt: number };
 
   constructor(opts: AudioOptions = {}) {
-    const { duckingDb = -6, getNow = () => performance.now() / 1000, duckFadeMs = 150 } = opts;
-    this.opts = { duckingDb, getNow, duckFadeMs } as Required<AudioOptions>;
+    const { duckingDb = -6, getNow = () => performance.now() / 1000, duckFadeMs = 150, musicFadeMs = 400 } = opts;
+    this.opts = { duckingDb, getNow, duckFadeMs, musicFadeMs } as Required<AudioOptions>;
   }
 
   // Convert decibels to linear gain multiplier
@@ -41,6 +43,10 @@ export class AudioSystem {
   setBusGain(bus: BusName, gain: number) { this.buses[bus].gain = Math.max(0, Math.min(1, gain)); }
   mute(bus: BusName, muted = true) { this.buses[bus].muted = muted; }
 
+  // Allow runtime updates to ducking configuration
+  setDuckingDb(db: number) { this.opts.duckingDb = Math.max(-48, Math.min(0, db)); }
+  setDuckFadeMs(ms: number) { this.opts.duckFadeMs = Math.max(0, Math.min(2000, ms)); }
+
   // Returns the effective gain for a bus including master and ducking
   getEffectiveGain(bus: BusName): number {
     const { master } = this.buses;
@@ -48,6 +54,9 @@ export class AudioSystem {
     if (master.muted || b.muted) return 0;
     let g = master.gain * b.gain;
     if (bus === 'music') {
+      // Apply crossfade envelope for current music
+      const env = this.getMusicEnvelope();
+      g *= env.current;
       const now = this.opts.getNow();
       if (now < this.voiceActiveUntil) {
         // Ease-out as we approach the tail end of the duck window
@@ -106,11 +115,51 @@ export class AudioSystem {
 
   // Simple music stem routing: store current stem key and return effective gain
   setMusic(key?: string) {
-    this.currentMusic = key ? { key } : undefined;
+    const now = this.opts.getNow();
+    // If changing to the same key, no-op
+    if (key && this.currentMusic?.key === key) return this.getEffectiveGain('music');
+    // Set previous to fade out
+    if (this.currentMusic?.key) {
+      this.previousMusic = { key: this.currentMusic.key, switchAt: now };
+    } else {
+      this.previousMusic = undefined;
+    }
+    // Set new current (or undefined for fade-to-silence)
+    this.currentMusic = key ? { key, startedAt: now } : undefined;
     return this.getEffectiveGain('music');
   }
 
   getCurrentMusic() { return this.currentMusic?.key; }
+
+  // Returns equal-power crossfade envelope for current/previous tracks
+  // current/previous are scalar multipliers in [0,1]
+  getMusicEnvelope() {
+    const now = this.opts.getNow();
+    const fadeMs = Math.max(1, this.opts.musicFadeMs);
+    if (!this.currentMusic && !this.previousMusic) {
+      // No music selected; treat envelope as pass-through so bus gain queries behave as before
+      return { currentKey: undefined as string | undefined, prevKey: undefined as string | undefined, current: 1, previous: 0 };
+    }
+    // If no change in progress
+    if (this.currentMusic && (!this.previousMusic || now - this.previousMusic.switchAt >= fadeMs / 1000)) {
+      return { currentKey: this.currentMusic.key, prevKey: this.previousMusic?.key, current: 1, previous: 0 };
+    }
+    // If fading to silence (no current, have previous)
+    if (!this.currentMusic && this.previousMusic) {
+      const t = Math.min(1, (now - this.previousMusic.switchAt) / (fadeMs / 1000));
+      const prev = Math.cos((Math.PI / 2) * t); // equal-power out
+      return { currentKey: undefined, prevKey: this.previousMusic.key, current: 0, previous: prev };
+    }
+    // Crossfading between previous -> current
+    if (this.currentMusic && this.previousMusic) {
+      const t = Math.min(1, (now - this.previousMusic.switchAt) / (fadeMs / 1000));
+      const prev = Math.cos((Math.PI / 2) * t);
+      const curr = Math.sin((Math.PI / 2) * t);
+      return { currentKey: this.currentMusic.key, prevKey: this.previousMusic.key, current: curr, previous: prev };
+    }
+    // Only current, no previous
+    return { currentKey: this.currentMusic?.key, prevKey: undefined, current: 1, previous: 0 };
+  }
 }
 
 export function makeDefaultAudio(opts?: AudioOptions) {

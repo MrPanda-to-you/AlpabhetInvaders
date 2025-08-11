@@ -78,7 +78,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Voice channel, music/sfx buses, ducking during phonemes.
   - Deliverables: src/systems/audio.ts, load phoneme files for A–Z.
   - Requirements: FR-5, FR-15, AC-FR-13.
-  - Progress: AudioSystem scaffolded with master/music/sfx/voice buses, decibel-based ducking and configurable duckFadeMs; FeedbackSystem wired to audio via adapter; implemented playSfx routing via asset cache; helpers registerPhonemesAZ/registerSfxDefaults + bootAssets; runtime helper to preload phonemes for upcoming letters; tests cover ducking (incl. fade), bus gains/mutes, sfx routing, A–Z registration + preload, and runtime preload.
+  - Progress: AudioSystem scaffolded with master/music/sfx/voice buses, decibel-based ducking and configurable duckFadeMs; FeedbackSystem wired to audio via adapter; implemented playSfx routing via asset cache; helpers registerPhonemesAZ/registerSfxDefaults + bootAssets; runtime helper to preload phonemes for upcoming letters; added equal-power music crossfade envelope on setMusic (fade-in/out) with tests; tests cover ducking (incl. fade), bus gains/mutes, sfx routing, A–Z registration + preload, runtime preload, and crossfade envelope.
 
 - [ ] T1.10 UI States & HUD (minimal)
   - Title, Mode Select (Learn, Mixed), Play, Wave Summary; basic HUD (score, lives, targets).
@@ -89,7 +89,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Save/load LetterStats, SessionRecord; simple checksum.
   - Deliverables: src/core/storage.ts.
   - Requirements: FR-4, FR-9.
-  - Progress: Minimal storage module added with JSON helpers; audio settings gains (master/music/sfx/voice) persisted and applied at startup; unit test covers clamping and round-trip.
+  - Progress: Minimal storage module added with JSON helpers; audio settings gains (master/music/sfx/voice) persisted and applied at startup; lightweight in-game Audio Settings panel (F3) to adjust bus gains and duckingDb/duckFadeMs with live-apply and persistence; unit test covers clamping and round-trip.
 
 - [ ] T1.12 Accessibility (baseline)
   - Dyslexia font toggle, keyboard-only flow, captions for phonemes.
