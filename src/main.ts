@@ -1,7 +1,7 @@
 import { setUpdater, startLoop } from './core/loop';
 import { enableFpsOverlay, toggleFpsOverlay } from '@ui/fpsOverlay';
 import { createInput, Action } from '@core/input';
-import { registerPhonemesAZ, registerSfxDefaults, preload } from '@core/assets';
+import { bootAssets } from '@core/boot';
 import { AudioSystem, makeFeedbackAudioAdapter } from './systems/audio';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement | null;
@@ -15,13 +15,8 @@ function update(_dt: number) {
 
 setUpdater(update);
 
-// Register audio assets and preload a minimal set at boot
-registerPhonemesAZ();
-registerSfxDefaults();
-// Preload a subset likely needed for first interactions (A, B, C phonemes and hit/miss)
-preload(['phoneme/A', 'phoneme/B', 'phoneme/C', 'sfx/hit', 'sfx/miss']).catch((e) => {
-  console.warn('Preload warning:', e);
-});
+// Register and preload core assets via central boot
+bootAssets().catch((e) => console.warn('Boot assets warning:', e));
 
 // Enable FPS overlay in dev for quick diagnostics
 if (import.meta && (import.meta as any).env?.DEV) {
