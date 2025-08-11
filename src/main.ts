@@ -3,6 +3,7 @@ import { enableFpsOverlay, toggleFpsOverlay } from '@ui/fpsOverlay';
 import { createInput, Action } from '@core/input';
 import { bootAssets } from '@core/boot';
 import { AudioSystem, makeFeedbackAudioAdapter } from './systems/audio';
+import { loadAudioSettings, saveAudioSettings } from './core/settings';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement | null;
 if (!canvas) {
@@ -38,6 +39,11 @@ input.on(Action.Pause, (evt) => {
 
 // Initialize audio system and adapter for future wiring into systems
 const audio = new AudioSystem();
+// Apply persisted audio gains
+const audioSettings = loadAudioSettings();
+for (const [bus, gain] of Object.entries(audioSettings.gains) as [keyof typeof audioSettings.gains, number][]) {
+  audio.setBusGain(bus, gain);
+}
 const feedbackAudio = makeFeedbackAudioAdapter(audio);
 // feedback system will consume `feedbackAudio` when integrated
 

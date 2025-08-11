@@ -89,6 +89,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Save/load LetterStats, SessionRecord; simple checksum.
   - Deliverables: src/core/storage.ts.
   - Requirements: FR-4, FR-9.
+  - Progress: Minimal storage module added with JSON helpers; audio settings gains (master/music/sfx/voice) persisted and applied at startup; unit test covers clamping and round-trip.
 
 - [ ] T1.12 Accessibility (baseline)
   - Dyslexia font toggle, keyboard-only flow, captions for phonemes.
