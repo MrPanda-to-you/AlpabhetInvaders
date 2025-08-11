@@ -86,11 +86,11 @@ Branch: feat/phase-1-mvp-core-archetypes (active)
   - Requirements: FR-11.
   - Progress: Minimal UIStateManager (title/play/summary) and HUD implemented + start screen & wave summary overlays with tests (start_screen, wave_summary); integrated in main.
 
-- [ ] T1.11 Persistence (Local)
+ - [x] T1.11 Persistence (Local)
   - Save/load LetterStats, SessionRecord; simple checksum.
   - Deliverables: src/core/storage.ts.
   - Requirements: FR-4, FR-9.
-  - Progress: Audio settings persistence DONE (panel + live apply). LetterStats/SessionRecord + checksum PENDING.
+  - Progress: Audio settings + SessionRecord + LetterStats persistence with checksum integrity check implemented; APIs (createEmptySession/loadSession/saveSession/updateLetterStat) and tests (session_persistence) added.
 
 - [ ] T1.12 Accessibility (baseline)
   - Dyslexia font toggle, keyboard-only flow, captions for phonemes.
