@@ -147,7 +147,7 @@ Branch: feat/phase-1-mvp-core-archetypes (created)
   - Percussion at x2, arpeggio at x3; 400ms fades; victory sting.
   - Deliverables: audio stem control in AudioSystem.
   - Requirements: AC-GF-3, FR-15.
-  - Progress: Music stem routing scaffolded (setMusic/getCurrentMusic) with bus gain application; groundwork for layering/fades.
+  - Progress: Equal-power crossfade envelope implemented for setMusic (fade-in/out, configurable musicFadeMs) with tests; stem routing scaffold (setMusic/getCurrentMusic) in place; layering controls TBD.
 
 - [ ] T3.3 Surprise Events
   - Event scheduler + scripts for Meteor Rain, Bonus Comet, Time Bubble; exclusivity + spacing.
