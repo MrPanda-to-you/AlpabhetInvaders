@@ -4,7 +4,8 @@ export type BusName = 'master' | 'music' | 'sfx' | 'voice';
 
 export interface AudioOptions {
   duckingDb?: number; // attenuation applied to music when voice active
-  getNow?: () => number; // injectable clock for tests
+  getNow?: () => number; // injectable clock for tests (seconds)
+  duckFadeMs?: number; // fade out time for ducking tail (ms)
 }
 
 export interface PlayOpts {
@@ -27,8 +28,8 @@ export class AudioSystem {
   private voiceActiveUntil = 0;
 
   constructor(opts: AudioOptions = {}) {
-    const { duckingDb = -6, getNow = () => performance.now() / 1000 } = opts;
-    this.opts = { duckingDb, getNow };
+    const { duckingDb = -6, getNow = () => performance.now() / 1000, duckFadeMs = 150 } = opts;
+    this.opts = { duckingDb, getNow, duckFadeMs } as Required<AudioOptions>;
   }
 
   // Convert decibels to linear gain multiplier
@@ -45,8 +46,17 @@ export class AudioSystem {
     const b = this.buses[bus];
     if (master.muted || b.muted) return 0;
     let g = master.gain * b.gain;
-    if (bus === 'music' && this.isVoiceActive()) {
-      g *= this.dbToGain(this.opts.duckingDb);
+    if (bus === 'music') {
+      const now = this.opts.getNow();
+      if (now < this.voiceActiveUntil) {
+        // Ease-out as we approach the tail end of the duck window
+        const remainingMs = (this.voiceActiveUntil - now) * 1000;
+        const fade = Math.max(1, this.opts.duckFadeMs);
+        const t = Math.min(1, remainingMs / fade);
+        const target = this.dbToGain(this.opts.duckingDb);
+        const eased = target + (1 - target) * (1 - t);
+        g *= eased;
+      }
     }
     return g;
   }
