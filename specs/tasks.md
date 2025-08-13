@@ -23,6 +23,7 @@ Dependency convention: Tasks listed in order; subtasks within a group can run in
 
 ## Phase 1 – MVP Core Loop, Archetypes, Adaptive Basics (Roadmap P1)
 Branch: feat/phase-1-mvp-core-archetypes (merged to main)
+Milestones: milestone/T1.1 … milestone/T1.14, milestone/phase-1-complete
 - [x] T1.1 GameLoop & Timing
   - Implement fixed timestep update + interpolated render; frame pacing stats collector.
   - Deliverables: src/core/loop.ts, FPS overlay debug toggle.
@@ -96,7 +97,7 @@ Branch: feat/phase-1-mvp-core-archetypes (merged to main)
   - Dyslexia font toggle, keyboard-only flow, captions for phonemes.
   - Deliverables: src/ui/accessibility.ts, CSS var themes.
   - Requirements: FR-6, Non-Functional Accessibility.
-  - Progress: AccessibilityManager added with dyslexia font toggle (F6), phoneme caption aria-live region (F7 toggle), persistence of settings; tests validate toggle persistence and caption timing.
+  - Progress: AccessibilityManager added with dyslexia font toggle (F6), phoneme caption aria-live region (F7 toggle), persistence of settings; tests validate toggle persistence and caption timing. Keyboard-only navigation is deferred to C1 Accessibility Pass.
 
 - [x] T1.13 Expand archetypes to all 26
   - Implement movement/attack subsets to represent each letter minimally.
