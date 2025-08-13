@@ -1,7 +1,7 @@
 # Alphabet Invaders – Implementation Tasks (tasks.md)
 Version: 1.0 (aligned with requirements v1.0 and design v1.0)
 Status: Draft for execution
-Last Updated: 2025-08-11
+Last Updated: 2025-08-12
 
 Legend: FR-x = Functional Requirement; AC-FR-x = Acceptance Criterion; AC-GF-x = Game Feel Acceptance.
 
@@ -22,7 +22,7 @@ Dependency convention: Tasks listed in order; subtasks within a group can run in
   - Requirements: Testability (Non-Functional).
 
 ## Phase 1 – MVP Core Loop, Archetypes, Adaptive Basics (Roadmap P1)
-Branch: feat/phase-1-mvp-core-archetypes (active)
+Branch: feat/phase-1-mvp-core-archetypes (merged to main)
 - [x] T1.1 GameLoop & Timing
   - Implement fixed timestep update + interpolated render; frame pacing stats collector.
   - Deliverables: src/core/loop.ts, FPS overlay debug toggle.
@@ -111,6 +111,7 @@ Branch: feat/phase-1-mvp-core-archetypes (active)
   - Progress: Added strategy coverage test and a dense-scene performance smoke test (3s sim with 20 enemies + 30 projectiles). Threshold assertions deferred to CI perf run; current test ensures stability and emissions.
 
 ## Phase 2 – Bosses, Advanced Attacks, Analytics, Reports (Roadmap P2)
+Branch: feat/phase-2-bosses-analytics (active)
 - [ ] T2.1 Boss Framework & Phases
   - Multi-phase thresholds, telegraphs, add-spawns; implement C, O, Q bosses.
   - Deliverables: src/systems/boss.ts; updates to attacks.
