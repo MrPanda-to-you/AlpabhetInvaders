@@ -113,6 +113,27 @@ Milestones: milestone/T1.1 … milestone/T1.14, milestone/phase-1-complete
 
 ## Phase 2 – Bosses, Advanced Attacks, Analytics, Reports (Roadmap P2)
 Branch: feat/phase-2-bosses-analytics (active)
+
+Recommended execution order (why: reduces risk, front-loads integration, and protects FPS):
+1) T2.1 Boss Framework & Phases — finish wiring into game flow
+  - Integrate bosses into spawner/flow (encounter trigger after N waves), add BossUpdate hook, and a spawnAdd adapter into Enemy system. Add a minimal Boss HP bar on HUD and a simple telegraph VFX placeholder. Extend tests: boss integration smoke + telegraph timing.
+  - Acceptance gate: boss C spawns and transitions through phases with adds; telegraph visible; tests green.
+2) T2.5 Difficulty Scaling Refinements — tune before adding heavier VFX
+  - Cap wave pressure archetypes, apply wave-to-wave smoothing; unit/integration tests to keep pressure ≤ targets even with boss adds.
+  - Acceptance gate: spawner/adaptive tests assert caps and smoothing.
+3) T2.2 Advanced Attack Types — implement richer boss attacks with telegraphs
+  - L beam channel shaping (with channel limit), Z chain lightning basic bounce, O ink slow zones (data-driven slow effect), D flame cone DoT cadence polish. Unit tests per attack behavior and telegraph cues.
+  - Acceptance gate: attacks produce expected emission patterns and respect concurrency caps.
+4) T2.6 Performance Polish — harden under boss scenes
+  - Particle/beam caps and simple pooling; extend perf harness to include one boss + 20 enemies for 3s; keep ≥55 FPS.
+  - Acceptance gate: perf smoke passes locally; regressions flagged.
+5) T2.3 Session Report & Wave Summary Polish — analytics-ready UI
+  - Add detailed per-letter stats and mastery bars; make summary skippable.
+  - Acceptance gate: UI tests assert presence/format; skip works.
+6) T2.4 Analytics Export (Educator) — schema last to reflect final data
+  - CSV/JSON export with headers; golden file tests.
+  - Acceptance gate: export tests pass; no PII beyond spec.
+
 - [ ] T2.1 Boss Framework & Phases
   - Multi-phase thresholds, telegraphs, add-spawns; implement C, O, Q bosses.
   - Deliverables: src/systems/boss.ts; updates to attacks.
