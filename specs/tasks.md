@@ -116,6 +116,7 @@ Branch: feat/phase-2-bosses-analytics (active)
   - Multi-phase thresholds, telegraphs, add-spawns; implement C, O, Q bosses.
   - Deliverables: src/systems/boss.ts; updates to attacks.
   - Requirements: FR-10, AC-FR-8.
+  - Progress: Introduced minimal Boss framework with phase thresholds, telegraph delays, and add-spawn hooks; added factories for C/O/Q bosses; basic unit test validates phase advance, telegraphing, and add spawns.
 
 - [ ] T2.2 Advanced Attack Types
   - L beam channel, Z chain lightning bounce, O ink slow zones, D flame cone DoT.
