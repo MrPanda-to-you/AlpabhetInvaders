@@ -4,6 +4,17 @@ export interface AttackContext {
 }
 export type AttackStrategy = (e: EnemyLike, ctx: AttackContext, dtMs: number) => void;
 
+// Import advanced attack systems
+import { 
+  createAdvancedBeamContinuous, 
+  createAdvancedChainLightning, 
+  createAdvancedInkSlowZones, 
+  createAdvancedFlameConeDoT,
+  type AdvancedAttackContext 
+} from './attacks/advanced';
+import { telegraphSystem } from './attacks/telegraph';
+import { areaEffectSystem } from './attacks/areaEffects';
+
 // A: pellet_slow — fire downward pellet every 0.8s
 export const pellet_slow: AttackStrategy = (() => {
   let t = 0;
@@ -54,16 +65,26 @@ export const AttackRegistry: Record<string, AttackStrategy> = {
 
 // ---- Minimal additional strategies to cover letters D..Z (T1.13) ----
 
-// D: flame_cone_dot — emit small forward pellets faster (simulated DoT cone)
+// D: flame_cone_dot — enhanced DoT cone with telegraph (T2.2)
 export const flame_cone_dot: AttackStrategy = (() => {
-  let t = 0;
-  const period = 180;
+  const entityId = `flame_${Math.random().toString(36).substr(2, 9)}`;
+  const advancedStrategy = createAdvancedFlameConeDoT(entityId);
+  
   return (e, ctx, dtMs) => {
-    t += dtMs;
-    while (t >= period) {
-      t -= period;
-      ctx.emitProjectile({ x: e.x, y: e.y, vx: 0, vy: 260, radius: 2 });
-    }
+    const advancedCtx: AdvancedAttackContext = {
+      ...ctx,
+      emitTelegraph: (telegraph) => {
+        telegraphSystem.addTelegraph({
+          ...telegraph,
+          color: telegraph.color || '#ff6600'
+        });
+      },
+      emitAreaEffect: (area) => {
+        areaEffectSystem.addAreaEffect(area);
+      }
+    };
+    
+    advancedStrategy(e, advancedCtx, dtMs);
   };
 })();
 
@@ -148,16 +169,37 @@ export const reflect_then_strike: AttackStrategy = (() => {
   };
 })();
 
-// L: beam_continuous — simulate by frequent small shots
+// L: beam_continuous — enhanced with telegraph and channel limits (T2.2)
 export const beam_continuous: AttackStrategy = (() => {
-  let t = 0;
-  const period = 120;
+  const entityId = `beam_${Math.random().toString(36).substr(2, 9)}`;
+  const advancedStrategy = createAdvancedBeamContinuous(entityId);
+  
   return (e, ctx, dtMs) => {
-    t += dtMs;
-    while (t >= period) {
-      t -= period;
-      ctx.emitProjectile({ x: e.x, y: e.y, vx: 0, vy: 280, radius: 2 });
-    }
+    // Create enhanced context for advanced attacks
+    const advancedCtx: AdvancedAttackContext = {
+      ...ctx,
+      emitTelegraph: (telegraph) => {
+        telegraphSystem.addTelegraph({
+          ...telegraph,
+          color: telegraph.color || '#ffffff'
+        });
+      },
+      emitBeam: (beam) => {
+        // Convert beam to series of projectiles for now
+        const projectileCount = Math.floor(beam.height / 20);
+        for (let i = 0; i < projectileCount; i++) {
+          ctx.emitProjectile({
+            x: beam.x,
+            y: beam.y + (i * 20),
+            vx: 0,
+            vy: 100,
+            radius: beam.width / 2
+          });
+        }
+      }
+    };
+    
+    advancedStrategy(e, advancedCtx, dtMs);
   };
 })();
 
@@ -188,20 +230,26 @@ export const shuriken_diagonal: AttackStrategy = (() => {
   };
 })();
 
-// O: ink_radial_slow — emit four slow radial shots over time (simplified)
+// O: ink_radial_slow — enhanced with slow zones and telegraph (T2.2)
 export const ink_radial_slow: AttackStrategy = (() => {
-  let t = 0;
-  const period = 900;
+  const entityId = `ink_${Math.random().toString(36).substr(2, 9)}`;
+  const advancedStrategy = createAdvancedInkSlowZones(entityId);
+  
   return (e, ctx, dtMs) => {
-    t += dtMs;
-    if (t >= period) {
-      t -= period;
-      const v = 160;
-      ctx.emitProjectile({ x: e.x, y: e.y, vx: v, vy: 0, radius: 3 });
-      ctx.emitProjectile({ x: e.x, y: e.y, vx: -v, vy: 0, radius: 3 });
-      ctx.emitProjectile({ x: e.x, y: e.y, vx: 0, vy: v, radius: 3 });
-      ctx.emitProjectile({ x: e.x, y: e.y, vx: 0, vy: -v, radius: 3 });
-    }
+    const advancedCtx: AdvancedAttackContext = {
+      ...ctx,
+      emitTelegraph: (telegraph) => {
+        telegraphSystem.addTelegraph({
+          ...telegraph,
+          color: telegraph.color || '#800080'
+        });
+      },
+      emitAreaEffect: (area) => {
+        areaEffectSystem.addAreaEffect(area);
+      }
+    };
+    
+    advancedStrategy(e, advancedCtx, dtMs);
   };
 })();
 
@@ -299,10 +347,35 @@ export const turret_salvo: AttackStrategy = (() => {
   };
 })();
 
-// Z: chain_lightning — zigzagging diagonals alternation
+// Z: chain_lightning — enhanced with bounce mechanics and telegraph (T2.2)
 export const chain_lightning: AttackStrategy = (() => {
-  let t = 0; let flip = false; const period = 500;
-  return (e, ctx, dtMs) => { t += dtMs; if (t >= period) { t -= period; const vx = flip ? -220 : 220; flip = !flip; ctx.emitProjectile({ x: e.x, y: e.y, vx, vy: 220, radius: 2 }); } };
+  const entityId = `chain_${Math.random().toString(36).substr(2, 9)}`;
+  const advancedStrategy = createAdvancedChainLightning(entityId);
+  
+  return (e, ctx, dtMs) => {
+    const advancedCtx: AdvancedAttackContext = {
+      ...ctx,
+      emitTelegraph: (telegraph) => {
+        telegraphSystem.addTelegraph({
+          ...telegraph,
+          color: telegraph.color || '#00ffff'
+        });
+      },
+      getNearbyEnemies: (x, y, radius) => {
+        // Simplified: return random nearby positions for chain bouncing
+        const nearby: EnemyLike[] = [];
+        for (let i = 0; i < 2; i++) {
+          nearby.push({
+            x: x + (Math.random() - 0.5) * radius,
+            y: y + (Math.random() - 0.5) * radius
+          });
+        }
+        return nearby;
+      }
+    };
+    
+    advancedStrategy(e, advancedCtx, dtMs);
+  };
 })();
 
 // Extend registry
