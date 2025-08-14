@@ -10,12 +10,21 @@ import { HUD } from './ui/hud';
 import { StartScreen } from './ui/screens/startScreen';
 import { WaveSummary } from './ui/screens/waveSummary';
 import { AccessibilityManager } from './ui/accessibility';
+import { createBossC, createBossO, createBossQ } from './systems/boss';
+import { createBossManager } from './systems/bossManager';
+import { createBossHUD } from './ui/bossHud';
+import { makeEnemyFromAdd, type Enemy } from './systems/enemies';
+import { shouldTriggerBoss } from './systems/spawner';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement | null;
 if (!canvas) {
   console.warn('No #game canvas found. Using index.html static for now.');
 }
 
+// --- Game State ---
+const enemies: Enemy[] = [];
+let currentWave = 0;
+let activeBossManager: ReturnType<typeof createBossManager> | null = null;
 
 // --- UI State and HUD integration ---
 const ui = new UIStateManager();
@@ -23,10 +32,68 @@ const hud = new HUD({ score: 0, lives: 3, wave: 1 });
 const startScreen = new StartScreen(ui);
 const summary = new WaveSummary(ui);
 const accessibility = new AccessibilityManager();
+const bossHUD = createBossHUD();
 
-function update(_dt: number) {
+function update(dt: number) {
+  // Update boss if active
+  if (activeBossManager) {
+    activeBossManager.update(dt);
+  }
+  
+  // Update enemies
+  // TODO: add proper enemy update context
+  
   // Example: update HUD (replace with real game logic)
   // hud.update({ score: ..., lives: ..., wave: ..., targets: [...] });
+}
+
+function triggerBossEncounter(bossType: 'C' | 'O' | 'Q') {
+  const bosses = {
+    C: createBossC,
+    O: createBossO,
+    Q: createBossQ,
+  };
+  
+  const boss = bosses[bossType]();
+  
+  activeBossManager = createBossManager(boss, {
+    onTelegraph: (active) => {
+      bossHUD.setTelegraph(active);
+      if (active) {
+        // Play telegraph SFX
+        audio?.playTelegraphSfx(bossType === 'Q' ? 'heavy' : 'light');
+      }
+    },
+    onHpChange: (hp, maxHp) => {
+      bossHUD.updateHp(hp, maxHp);
+    },
+    onDefeated: () => {
+      bossHUD.hide();
+      activeBossManager = null;
+      console.log(`Boss ${bossType} defeated!`);
+    },
+    onSpawnAdd: (spec) => {
+      const enemy = makeEnemyFromAdd(spec);
+      enemies.push(enemy);
+      console.log(`Boss spawned add: ${spec.movementId}/${spec.attackId}`);
+    },
+  });
+  
+  bossHUD.show(`Boss ${bossType}`, boss.hp, boss.maxHp);
+}
+
+function checkForBossWave() {
+  if (shouldTriggerBoss(currentWave)) {
+    // Choose boss type based on wave
+    const bossWave = Math.floor((currentWave + 1) / 5);
+    let bossType: 'C' | 'O' | 'Q' = 'C';
+    if (bossWave >= 3) bossType = 'Q';
+    else if (bossWave >= 2) bossType = 'O';
+    
+    triggerBossEncounter(bossType);
+    return true;
+  }
+  return false;
 }
 // Example: wire up state transitions (replace with real game logic)
 ui.onChange((state) => {
@@ -60,7 +127,7 @@ if (import.meta && (import.meta as any).env?.DEV) {
   enableFpsOverlay();
 }
 
-// Keyboard toggle (F2) for FPS overlay
+// Dev hotkeys for testing
 window.addEventListener('keydown', (e) => {
   if (e.key === 'F2') {
     toggleFpsOverlay();
@@ -73,6 +140,21 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.key === 'F7') { // Toggle phoneme captions
     accessibility.setCaptionsEnabled(!accessibility.captionsEnabled());
+  }
+  if (e.key === 'F8') { // Next wave
+    currentWave++;
+    if (!checkForBossWave()) {
+      console.log(`Regular wave ${currentWave} - no boss`);
+    }
+  }
+  if (e.key === 'F9') { // Force boss C
+    triggerBossEncounter('C');
+  }
+  if (e.key === 'F10') { // Force boss O
+    triggerBossEncounter('O');
+  }
+  if (e.key === 'F11') { // Force boss Q
+    triggerBossEncounter('Q');
   }
 });
 

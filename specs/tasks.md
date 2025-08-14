@@ -1,7 +1,7 @@
 # Alphabet Invaders – Implementation Tasks (tasks.md)
 Version: 1.0 (aligned with requirements v1.0 and design v1.0)
 Status: Draft for execution
-Last Updated: 2025-08-12
+Last Updated: 2025-08-13
 
 Legend: FR-x = Functional Requirement; AC-FR-x = Acceptance Criterion; AC-GF-x = Game Feel Acceptance.
 
@@ -134,11 +134,11 @@ Recommended execution order (why: reduces risk, front-loads integration, and pro
   - CSV/JSON export with headers; golden file tests.
   - Acceptance gate: export tests pass; no PII beyond spec.
 
-- [ ] T2.1 Boss Framework & Phases
+- [x] T2.1 Boss Framework & Phases
   - Multi-phase thresholds, telegraphs, add-spawns; implement C, O, Q bosses.
   - Deliverables: src/systems/boss.ts; updates to attacks.
   - Requirements: FR-10, AC-FR-8.
-  - Progress: Introduced minimal Boss framework with phase thresholds, telegraph delays, and add-spawn hooks; added factories for C/O/Q bosses; basic unit test validates phase advance, telegraphing, and add spawns.
+  - Progress: COMPLETE. Core Boss framework (makeBoss, updateBoss, applyDamage) with boss factories createBossC/O/Q. BossManager integration layer (src/systems/bossManager.ts) with event hooks. Boss HUD component (src/ui/bossHud.ts) with HP bar and telegraph warning. spawnAdd → Enemy system wiring via makeEnemyFromAdd. Telegraph SFX (playTelegraphSfx light/heavy). Boss trigger logic (shouldTriggerBoss) integrated into main.ts with dev hotkeys F8-F11. Tests: boss.test.ts, bossManager.test.ts, spawner_boss_trigger.test.ts, audio_telegraph.test.ts.
 
 - [ ] T2.2 Advanced Attack Types
   - L beam channel, Z chain lightning bounce, O ink slow zones, D flame cone DoT.
@@ -159,6 +159,7 @@ Recommended execution order (why: reduces risk, front-loads integration, and pro
   - Wave-to-wave smoothing cap (≤ +15% composite), limit pressure archetypes ≤ 30% of slots.
   - Deliverables: spawner/adaptive updates + tests.
   - Requirements: FR-13, 18.1 pillars.
+  - Progress: NOT IMPLEMENTED. No evidence of pressure archetype capping, wave-to-wave smoothing, or composite difficulty computation in codebase.
 
 - [ ] T2.6 Performance Polish
   - Particle caps, beam concurrency caps, pooling; ensure ≥55 FPS scenes.

@@ -20,6 +20,10 @@ export function makeEnemy(x: number, y: number, movementId: string, attackId: st
   return { id: nextId++, x, y, hp, movementId, attackId };
 }
 
+export function makeEnemyFromAdd(spec: { x: number; y: number; movementId: string; attackId: string; hp: number }): Enemy {
+  return makeEnemy(spec.x, spec.y, spec.movementId, spec.attackId, spec.hp);
+}
+
 export function updateEnemy(e: Enemy, ctx: EnemyUpdateContext, dtMs: number) {
   const mv: MovementStrategy | undefined = MovementRegistry[e.movementId];
   if (mv) mv(e, dtMs, ctx);

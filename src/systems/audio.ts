@@ -113,6 +113,12 @@ export class AudioSystem {
     return { bus: 'sfx' as const, key, volume: vol, effectiveGain: effective };
   }
 
+  playTelegraphSfx(intensity: 'light' | 'heavy' = 'light') {
+    const key = intensity === 'heavy' ? 'sfx/telegraph_heavy' : 'sfx/telegraph_light';
+    const volume = intensity === 'heavy' ? 0.8 : 0.6;
+    this.playSfx(key, { volume });
+  }
+
   // Simple music stem routing: store current stem key and return effective gain
   setMusic(key?: string) {
     const now = this.opts.getNow();

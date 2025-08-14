@@ -103,3 +103,8 @@ export function createWave(
   const slots = opts.slots ?? generateGridSlots(n);
   return spawnWave(slots, recipe);
 }
+
+export function shouldTriggerBoss(waveIndex: number, cadence = 5): boolean {
+  // waveIndex is 0-based; triggers on waves 4, 9, 14... (every 5 waves)
+  return (waveIndex + 1) % cadence === 0;
+}
