@@ -1,5 +1,5 @@
 import type { LetterId, EnemyArchetype } from './archetypes';
-import { pickWithReview, type AdaptiveState } from './adaptive';
+import { pickWithReview, type AdaptiveState, capPressureArchetypes, applyWaveToWaveSmoothing, computeCompositeDifficulty, type DifficultyConfig } from './adaptive';
 import { preloadPhonemesForLetters } from '../core/boot';
 import { makeEnemy, type Enemy } from './enemies';
 
@@ -86,6 +86,13 @@ export interface WaveFactoryOptions {
   rng?: () => number;
   slots?: SpawnSlot[]; // if omitted, caller must supply slots
   preloadPhonemes?: boolean; // opportunistically preload phonemes for selected letters (default: true)
+  previousWaveDifficulty?: number; // For wave-to-wave smoothing
+  difficultyConfig?: DifficultyConfig; // Difficulty constraints
+}
+
+export interface WaveResult {
+  enemies: Enemy[];
+  compositeDifficulty: number;
 }
 
 export function createWave(
@@ -93,15 +100,30 @@ export function createWave(
   stats: AdaptiveState,
   n: number,
   opts: WaveFactoryOptions = {},
-): SpawnResult {
-  const letters = generateWaveLetters(archetypes, stats, n, opts);
+): WaveResult {
+  let letters = generateWaveLetters(archetypes, stats, n, opts);
+  
+  // Apply difficulty constraints
+  letters = capPressureArchetypes(letters as string[], opts.difficultyConfig) as LetterId[];
+  
+  if (opts.previousWaveDifficulty !== undefined) {
+    letters = applyWaveToWaveSmoothing(
+      letters as string[], 
+      opts.previousWaveDifficulty, 
+      opts.difficultyConfig
+    ) as LetterId[];
+  }
+  
   // Opportunistically preload phonemes for the selected letters; fire-and-forget
   if (opts.preloadPhonemes !== false) {
     void preloadPhonemesForLetters(letters as unknown as string[]);
   }
   const recipe = buildRecipeFromArchetypes(archetypes, letters);
   const slots = opts.slots ?? generateGridSlots(n);
-  return spawnWave(slots, recipe);
+  const enemies = spawnWave(slots, recipe).enemies;
+  const compositeDifficulty = computeCompositeDifficulty(letters as string[]);
+  
+  return { enemies, compositeDifficulty };
 }
 
 export function shouldTriggerBoss(waveIndex: number, cadence = 5): boolean {
